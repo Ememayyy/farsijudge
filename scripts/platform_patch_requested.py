@@ -248,13 +248,13 @@ once(
 )
 once(
 """<div className="exam-heading-panel"><div><div className="eyebrow">مسابقه آنلاین</div><h1>{exam.title}</h1><p>{exam.description || 'پاسخ هر سؤال را به‌صورت عددی وارد کنید.'}</p></div><StatusBadge status={status} /></div>
-    <div className="exam-info-grid">""",
+    {questionResourceUrl && <a className="question-paper-link" href={questionResourceUrl} target="_blank" rel="noreferrer"><ExternalLink size={17} />دانلود / مشاهده فایل صورت سؤال</a>}""",
 """<div className="exam-heading-panel"><div><div className="eyebrow">مسابقه آنلاین</div><h1>{exam.title}</h1><p>{exam.description || 'پاسخ هر سؤال را به‌صورت عددی وارد کنید.'}</p></div><StatusBadge status={status} /></div>
     {(exam.tags?.length || exam.announcement) && <div className="contest-meta-panel">
       {exam.tags && exam.tags.length > 0 && <div className="contest-topic-tags">{exam.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}
       {exam.announcement && <p>{exam.announcement}</p>}
     </div>}
-    <div className="exam-info-grid">""",
+    {questionResourceUrl && <a className="question-paper-link" href={questionResourceUrl} target="_blank" rel="noreferrer"><ExternalLink size={17} />دانلود / مشاهده فایل صورت سؤال</a>}""",
 "show live contest announcement and tags"
 )
 once(
