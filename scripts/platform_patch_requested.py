@@ -44,7 +44,7 @@ once("  const [teamBusy, setTeamBusy] = useState(false)",
      "registration busy state")
 once(
 "supabase.from('exams').select('id,title,description,starts_at,duration_minutes,is_published,created_at').order('starts_at', { ascending: false })",
-"supabase.from('exams').select('id,title,description,starts_at,duration_minutes,is_published,question_pdf_url,question_file_path,end_at_override,allow_late_registration,registration_closes_at,results_release_at,announcement,tags,created_at').order('starts_at', { ascending: false })",
+"supabase.from('exams').select('id,title,description,starts_at,duration_minutes,is_published,end_at_override,allow_late_registration,registration_closes_at,results_release_at,announcement,tags,created_at').order('starts_at', { ascending: false })",
 "load contest control fields"
 )
 once(
@@ -78,6 +78,31 @@ once(
       }
     })""",
 "auth route listener"
+)
+
+once(
+"""  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+""",
+"""  useEffect(() => {
+    if (!selectedExam || page !== 'exam' || selectedStatus !== 'ended' || isDemo || !supabase || !session?.user.id || examResult) return
+    let alive = true
+    const refreshPublishedResult = async () => {
+      const useTeam = Boolean(team && myTeamRegistrations.includes(selectedExam.id))
+      const response = useTeam
+        ? await supabase.from('exam_results').select('*').eq('exam_id', selectedExam.id).eq('team_id', team!.id).maybeSingle()
+        : await supabase.from('exam_results').select('*').eq('exam_id', selectedExam.id).eq('user_id', session.user.id).is('team_id', null).maybeSingle()
+      if (alive && response.data) setExamResult(response.data as ExamResult)
+    }
+    void refreshPublishedResult()
+    const timer = window.setInterval(() => { void refreshPublishedResult() }, 10000)
+    return () => { alive = false; window.clearInterval(timer) }
+  }, [selectedExam?.id, selectedStatus, page, isDemo, session?.user.id, team?.id, myTeamRegistrations, examResult])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+""",
+"poll for scheduled result publication"
 )
 
 const_old = """  const registerForExam = async (exam: Exam) => {
