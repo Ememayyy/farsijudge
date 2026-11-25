@@ -23,9 +23,15 @@ $$;
 alter table public.profiles alter column username set not null;
 grant update (username) on public.profiles to authenticated;
 
--- Extend exams with optional question-paper resources.
-alter table public.exams add column if not exists question_pdf_url text;
-alter table public.exams add column if not exists question_file_path text;
+-- Store question resources separately so unregistered users cannot query their URLs or paths.
+create table if not exists public.exam_question_resources (
+  exam_id uuid primary key references public.exams(id) on delete cascade,
+  question_pdf_url text,
+  question_file_path text,
+  updated_at timestamptz not null default now()
+);
+alter table public.exam_question_resources enable row level security;
+-- No direct table grants: the registration-aware SECURITY DEFINER RPCs below are the only access path.
 
 -- One user may belong to at most one team. A team has one captain and at most three more members.
 create table if not exists public.teams (
@@ -595,11 +601,16 @@ begin
     title = btrim(p_title),
     description = coalesce(p_description, ''),
     starts_at = p_starts_at,
-    duration_minutes = p_duration_minutes,
-    question_pdf_url = nullif(btrim(p_question_pdf_url), ''),
-    question_file_path = nullif(btrim(p_question_file_path), '')
+    duration_minutes = p_duration_minutes
   where id = p_exam_id;
   if not found then raise exception 'آزمون پیدا نشد.'; end if;
+
+  insert into public.exam_question_resources(exam_id, question_pdf_url, question_file_path, updated_at)
+  values (p_exam_id, nullif(btrim(p_question_pdf_url), ''), nullif(btrim(p_question_file_path), ''), pg_catalog.now())
+  on conflict (exam_id) do update set
+    question_pdf_url = excluded.question_pdf_url,
+    question_file_path = excluded.question_file_path,
+    updated_at = excluded.updated_at;
 
   for v_item in select value from pg_catalog.jsonb_array_elements(p_questions)
   loop
@@ -637,13 +648,17 @@ language plpgsql security definer set search_path = ''
 as $$
 begin
   if not (select public.is_admin()) then raise exception 'فقط مدیر سامانه اجازه تغییر فایل سؤال را دارد.'; end if;
-  update public.exams set
-    question_pdf_url = nullif(btrim(p_question_pdf_url), ''),
-    question_file_path = nullif(btrim(p_question_file_path), '')
-  where id = p_exam_id;
-  if not found then raise exception 'آزمون پیدا نشد.'; end if;
+  if not exists (select 1 from public.exams where id = p_exam_id) then
+    raise exception 'آزمون پیدا نشد.';
+  end if;
+  insert into public.exam_question_resources(exam_id, question_pdf_url, question_file_path, updated_at)
+  values (p_exam_id, nullif(btrim(p_question_pdf_url), ''), nullif(btrim(p_question_file_path), ''), pg_catalog.now())
+  on conflict (exam_id) do update set
+    question_pdf_url = excluded.question_pdf_url,
+    question_file_path = excluded.question_file_path,
+    updated_at = excluded.updated_at;
 end;
-$$;
+$;
 revoke all on function public.set_exam_question_resource(uuid, text, text) from public, anon;
 grant execute on function public.set_exam_question_resource(uuid, text, text) to authenticated;
 
@@ -679,15 +694,13 @@ begin
   end if;
 
   return query
-    select e.question_pdf_url, e.question_file_path
-    from public.exams e
-    where e.id = p_exam_id;
+    select r.question_pdf_url, r.question_file_path
+    from public.exam_question_resources r
+    where r.exam_id = p_exam_id;
 end;
 $;
 revoke all on function public.get_exam_question_resource(uuid) from public, anon;
 grant execute on function public.get_exam_question_resource(uuid) to authenticated;
-
-revoke select (question_pdf_url, question_file_path) on public.exams from anon, authenticated;
 
 create or replace function public.admin_set_profile_role(p_user_id uuid, p_role text)
 returns void
