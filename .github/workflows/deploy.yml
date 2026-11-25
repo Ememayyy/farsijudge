@@ -60,44 +60,8 @@ jobs:
           cp supabase/migrations/002_teams_registration_admin_features.sql farsijudge/supabase/migrations/002_teams_registration_admin_features.sql
           cp supabase/migrations/003_farsijudge_platform_upgrade.sql farsijudge/supabase/migrations/003_farsijudge_platform_upgrade.sql
           cp supabase/migrations/004_profile_edit.sql farsijudge/supabase/migrations/004_profile_edit.sql
+          cp supabase/migrations/004_profile_edit.sql farsijudge/supabase/migrations/004_profile_edit.sql
           cp supabase/email-templates/confirm-signup.html farsijudge/supabase/email-templates/confirm-signup.html
-
-      - name: Assemble final frontend features
-        run: |
-          mkdir -p farsijudge/scripts
-          python3 - <<'PY'
-          from pathlib import Path
-          root = Path("release-patch")
-          a = (root / "app_00.txt").read_text(encoding="utf-8")
-          b = (root / "app_01.txt").read_text(encoding="utf-8")
-          assert len(a) == 4500, f"app_00 length: {len(a)}"
-          assert len(b) >= 4500, f"app_01 length: {len(b)}"
-          Path("farsijudge/scripts/finalize_app.py").write_text(a + b[:4500], encoding="utf-8")
-          PY
-          for part in release-patch/app_*.b64; do
-            case "$part" in
-              *app_06.b64|*app_08.b64) echo "Skipping replaced damaged $part"; continue ;;
-            esac
-            echo "Decoding $part"
-            base64 -d "$part" >> farsijudge/scripts/finalize_app.py
-          done
-          : > farsijudge/scripts/final-visual.css
-          for part in release-patch/style_*.b64; do
-            case "$part" in *style_00.b64) echo "Skipping replaced damaged $part"; continue ;; esac
-            echo "Decoding $part"
-            base64 -d "$part" >> farsijudge/scripts/final-visual.css
-          done
-          (cd farsijudge && python3 scripts/finalize_app.py && cat scripts/final-visual.css >> src/style.css)
-
-      - name: Upload patched source snapshot (verification)
-        uses: actions/upload-artifact@v4
-        with:
-          name: farsijudge-source-snapshot
-          path: |
-            ./farsijudge/src/App.tsx
-            ./farsijudge/src/style.css
-            ./farsijudge/package.json
-          retention-days: 2
 
       - name: Install dependencies
         working-directory: ./farsijudge
@@ -119,22 +83,6 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: ./farsijudge/dist
-
-      - name: Wait for Pages artifact visibility
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for attempt in $(seq 1 12); do
-            artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[]? | select(.name == "github-pages") | .id' | head -n 1)
-            if [ -n "$artifact_id" ]; then
-              echo "Pages artifact is visible: $artifact_id"
-              exit 0
-            fi
-            echo "Pages artifact not visible yet (attempt $attempt/12); retrying..."
-            sleep 5
-          done
-          echo "Pages artifact did not become visible in the Actions API."
-          exit 1
 
       - name: Deploy to GitHub Pages
         id: deployment
