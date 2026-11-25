@@ -31,7 +31,7 @@ jobs:
           node-version: 22
 
       - name: Install PWA icon tooling
-        run: python3 -m pip install --user --quiet Pillow
+        run: python3 -m pip install --user --quiet --break-system-packages Pillow
 
       - name: Check Supabase configuration
         run: |
