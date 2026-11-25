@@ -44,11 +44,14 @@ jobs:
         run: |
           patch -p1 < farsijudge-ui-auth.patch
           python3 scripts/patch_typescript.py
-          mkdir -p farsijudge/public farsijudge/supabase
+          cp scripts/feature_patch.py farsijudge/scripts/feature_patch.py
+          (cd farsijudge && python3 scripts/feature_patch.py)
+          mkdir -p farsijudge/public farsijudge/supabase/migrations
           cat logo-part-*.b64 | base64 --decode > farsijudge/public/farsijudge-logo.webp
           cp README.md farsijudge/README.md
           cp supabase/promote-admin.sql farsijudge/supabase/promote-admin.sql
           cp supabase/auth-url-settings.md farsijudge/supabase/auth-url-settings.md
+          cp supabase/migrations/002_teams_registration_admin_features.sql farsijudge/supabase/migrations/002_teams_registration_admin_features.sql
 
       - name: Install dependencies
         working-directory: ./farsijudge
