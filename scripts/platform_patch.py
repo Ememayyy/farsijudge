@@ -256,3 +256,73 @@ landing = """function LandingPage({onLogin,onRegister,cookieAccepted,onCookie}:{
 """
 s = s[:insert_at] + landing + s[insert_at:]
 p.write_text(s, encoding="utf-8")
+
+
+p = Path("src/App.tsx")
+s = p.read_text(encoding="utf-8")
+
+# Icons used by the public landing page and mobile navigation.
+s = s.replace(
+"ExternalLink,\n",
+"ExternalLink, ArrowRight, ArrowUpRight, BarChart3, Bell, CalendarClock, FileText, Flag, Menu, Search, Settings, Sparkles, Trophy, Activity,\n", 1
+)
+# Cloudflare Turnstile is verified by Supabase Auth; it is not a decorative checkbox.
+s = s.replace("import type { FormEvent } from 'react'\n", "import type { FormEvent } from 'react'\nimport { Turnstile } from '@marsidev/react-turnstile'\n", 1)
+s = s.replace(
+"  const [authUsername, setAuthUsername] = useState('')",
+"""  const [authUsername, setAuthUsername] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaKey, setCaptchaKey] = useState(0)""", 1
+)
+s = s.replace(
+"  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')",
+"  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')\n  const turnstileSiteKey = (import.meta.env as ImportMetaEnv & { VITE_TURNSTILE_SITE_KEY?: string }).VITE_TURNSTILE_SITE_KEY || ''",
+1
+)
+# Reject form submissions without a completed challenge whenever Turnstile is configured.
+s = s.replace(
+"    setAuthBusy(true)\n    if (authMode === 'register') {",
+"    if (turnstileSiteKey && !captchaToken) return notify('لطفاً بررسی امنیتی را تکمیل کنید.', 'error')\n    setAuthBusy(true)\n    if (authMode === 'register') {",
+1
+)
+s = s.replace(
+"emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).toString() },",
+"emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).toString(), captchaToken: captchaToken || undefined },",
+1
+)
+s = s.replace(
+"supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword })",
+"supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword, options: { captchaToken: captchaToken || undefined } })",
+1
+)
+# Activate the single-device session on successful login / immediate signup.
+s = s.replace(
+"      else notify('با موفقیت وارد شدید.', 'success')",
+"      else { const active = await supabase.rpc('activate_my_single_session'); if (active.error) notify(active.error.message, 'error'); else { notify('با موفقیت وارد شدید.', 'success'); setPage('dashboard') } }",
+1
+)
+s = s.replace(
+"      else if (data.session) notify('حساب شما ساخته شد. خوش آمدید!', 'success')",
+"      else if (data.session) { const active = await supabase.rpc('activate_my_single_session'); if (active.error) notify(active.error.message, 'error'); else { notify('حساب فارسی جاج ساخته شد.', 'success'); setPage('dashboard') } }",
+1
+)
+# Put the real widget inside the authentication form.
+constCaptcha = """            {turnstileSiteKey ? <Turnstile key={captchaKey} siteKey={turnstileSiteKey} onSuccess={setCaptchaToken} onExpire={() => setCaptchaToken('')} /> : <small className="captcha-setup-note">برای فعال‌سازی ضدربات، کلید Cloudflare Turnstile را در تنظیمات انتشار قرار دهید.</small>}
+"""
+s = s.replace('            <button className="button primary full" type="submit" disabled={authBusy}>', constCaptcha + '            <button className="button primary full" type="submit" disabled={authBusy || (Boolean(turnstileSiteKey) && !captchaToken)}>', 1)
+# Reset challenge after one authentication attempt.
+s = s.replace("    setAuthBusy(false)\n  }\n\n  const enterDemo", "    setAuthBusy(false)\n    setCaptchaToken('')\n    setCaptchaKey((x) => x + 1)\n  }\n\n  const enterDemo", 1)
+
+p.write_text(s, encoding="utf-8")
+
+# Add the widget as an ordinary frontend dependency.
+pkg_path = Path("package.json")
+pkg = json.loads(pkg_path.read_text(encoding="utf-8"))
+pkg.setdefault("dependencies", {})["@marsidev/react-turnstile"] = "^1.3.1"
+pkg_path.write_text(json.dumps(pkg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+env_path = Path("src/vite-env.d.ts")
+env = env_path.read_text(encoding="utf-8") if env_path.exists() else "/// <reference types=\"vite/client\" />\n"
+if "VITE_TURNSTILE_SITE_KEY" not in env:
+    env += "\ninterface ImportMetaEnv { readonly VITE_TURNSTILE_SITE_KEY?: string }\n"
+env_path.write_text(env, encoding="utf-8")
