@@ -44,6 +44,7 @@ jobs:
         run: |
           patch -p1 < farsijudge-ui-auth.patch
           python3 scripts/patch_typescript.py
+          mkdir -p farsijudge/scripts
           cp scripts/feature_patch.py farsijudge/scripts/feature_patch.py
           (cd farsijudge && python3 scripts/feature_patch.py)
           mkdir -p farsijudge/public farsijudge/supabase/migrations
