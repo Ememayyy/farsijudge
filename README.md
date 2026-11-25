@@ -26,7 +26,7 @@ https://ememayyy.github.io/farsijudge/
 
 این migration ستون نام کاربری، امکان تغییر نام کاربری از صفحه تیم، تیم‌ها، دعوت‌نامه‌ها، ثبت‌نام فردی/تیمی، پاسخ‌های مشترک، لینک یا فایل خصوصی PDF و RPCهای امن مدیریت و تصحیح مجدد را اضافه می‌کند. همچنین `pg_cron` را فعال می‌کند و هر دقیقه آزمون‌های پایان‌یافته و تصحیح‌نشده را به‌طور خودکار تصحیح می‌کند. بدون اجرای migration، رابط جدید به جداول و توابعی اشاره می‌کند که هنوز در دیتابیس وجود ندارند.
 
-سپس فایل [003_farsijudge_platform_upgrade.sql](supabase/migrations/003_farsijudge_platform_upgrade.sql) را **یک‌بار** اجرا کن. این Migration سقف سه نفر برای تیم با احتساب کاپیتان، خروج و انتقال کاپیتانی، نشست تک‌دستگاهی، تنظیمات زنده مسابقه، زمان انتشار کارنامه، تگ‌ها، حذف کاربر و بررسی سؤال‌به‌سؤال را اضافه می‌کند.
+سپس فایل [003_farsijudge_platform_upgrade.sql](supabase/migrations/003_farsijudge_platform_upgrade.sql) را **یک‌بار** اجرا کن. این Migration توابع و محدودیت‌های دیتابیس برای سقف سه نفر با احتساب کاپیتان، خروج و انتقال کاپیتانی، ثبت نشست تک‌دستگاهی، کنترل زمان مسابقه، انتشار کارنامه، تگ‌ها، حذف کاربر و بررسی سؤال‌به‌سؤال را اضافه می‌کند. توجه کن که وجود RPC در دیتابیس به‌تنهایی به معنی اتصال کامل دکمه‌ها و صفحات فرانت‌اند نیست؛ این اتصال‌ها باید جداگانه تکمیل و تست شوند.
 
 ## مدیر کردن حساب مالک
 
@@ -34,7 +34,7 @@ https://ememayyy.github.io/farsijudge/
 
 ## ضدربات و انتشار
 
-برای فعال‌کردن Cloudflare Turnstile، یک Site Key و Secret Key بساز. `VITE_TURNSTILE_SITE_KEY` را در GitHub Actions Variables قرار بده و Secret Key را در تنظیمات CAPTCHA پروژه Supabase ثبت کن (**Authentication → Bot and Abuse Protection → CAPTCHA**). تا وقتی هر دو سمت تنظیم نشده باشند، CAPTCHA واقعی فعال نیست. محدودیت نرخ درخواست Supabase نیز باید روشن بماند.
+**وضعیت فعلی ضدربات:** اتصال ویجت Turnstile در فرانت‌اند هنوز در نسخه منتشرشده فعال نشده است. فعلاً Site Key یا Secret را تنظیم نکن و روی این نسخه CAPTCHA فعال فرض نکن. وقتی اتصال فرانت‌اند کامل شد، Site Key در GitHub Actions Variables و Secret Key در Supabase → Authentication → Bot and Abuse Protection → CAPTCHA ثبت می‌شوند. محدودیت نرخ درخواست Supabase باید روشن بماند.
 
 هر Push روی شاخه `main`، پروژه را با GitHub Actions می‌سازد و روی GitHub Pages منتشر می‌کند. متغیرهای Repository زیر باید در **Settings → Secrets and variables → Actions → Variables** تعریف شده باشند:
 
