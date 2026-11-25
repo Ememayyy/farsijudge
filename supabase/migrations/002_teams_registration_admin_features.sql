@@ -559,15 +559,41 @@ begin
     where e.is_published
       and pg_catalog.now() >= e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
       and (
-        exists (select 1 from public.exam_registrations er where er.exam_id = e.id)
-        or exists (select 1 from public.exam_team_registrations etr where etr.exam_id = e.id)
+      exists (
+        select 1
+        from public.exam_registrations er
+        left join public.exam_results r on r.exam_id = er.exam_id and r.user_id = er.user_id
+        where er.exam_id = e.id and r.id is null
       )
+      or exists (
+        select 1
+        from public.exam_team_registrations etr
+        left join public.exam_results r on r.exam_id = etr.exam_id and r.team_id = etr.team_id
+        where etr.exam_id = e.id and r.id is null
+      )
+      or exists (
+        select 1
+        from public.exam_attempts a
+        left join public.exam_results r on r.exam_id = a.exam_id and r.user_id = a.user_id
+        where a.exam_id = e.id and a.team_id is null and r.id is null
+      )
+    )
   loop
     perform public.finalize_exam_internal(v_exam_id);
   end loop;
 end;
 $$;
 revoke all on function public.finalize_all_expired_exams() from public, anon, authenticated;
+
+-- Grade expired exams even when no participant or administrator is online.
+create extension if not exists pg_cron with schema pg_catalog;
+grant usage on schema cron to postgres;
+grant all privileges on all tables in schema cron to postgres;
+select cron.schedule(
+  'farsijudge-grade-expired-exams',
+  '* * * * *',
+  'select public.finalize_all_expired_exams();'
+);
 
 -- Admin editing replaces metadata, points and answer keys atomically, then regrades ended exams.
 create or replace function public.edit_exam_with_answer_key(
@@ -766,4 +792,17 @@ using (
     )
   )
 );
+
+-- Preserve only people who had already opened an in-progress legacy exam before this migration.
+-- New participants still have to register before starts_at through register_for_exam().
+insert into public.exam_registrations(exam_id, user_id)
+select a.exam_id, a.user_id
+from public.exam_attempts a
+join public.exams e on e.id = a.exam_id
+where a.team_id is null
+  and e.is_published
+  and pg_catalog.now() >= e.starts_at
+  and pg_catalog.now() < e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
+on conflict do nothing;
+
 commit;
