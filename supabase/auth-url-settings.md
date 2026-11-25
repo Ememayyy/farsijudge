@@ -23,9 +23,9 @@ The confirmation link must use Supabase's generated confirmation URL, not a hard
 
 If a custom template builds a link from `{{ .SiteURL }}`, update it to use the intended redirect or Supabase's `{{ .ConfirmationURL }}`. The `.SiteURL` value comes from the Site URL setting; `.RedirectTo` is the redirect supplied by the app.
 
-## Whether email confirmation should be required
+## Email confirmation
 
-The owner requested immediate sign-in without email verification. In **Authentication → Providers → Email**, turn **Confirm email** off. Supabase then confirms new email accounts automatically and does not send signup confirmation emails. Turn this on only if verification is desired.
+For the intended signup flow, email verification must be required. In **Authentication → Providers → Email**, turn **Confirm email** on. New accounts must use the confirmation link sent by Supabase before they can sign in normally. The confirmation template should use `{{ .ConfirmationURL }}` and the Site URL / Redirect URLs above must be correct.
 
 ## Why a link may say otp_expired
 
