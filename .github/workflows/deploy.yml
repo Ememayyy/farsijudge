@@ -40,6 +40,9 @@ jobs:
       - name: Extract source
         run: tar -xzf farsijudge-source.tar.gz
 
+      - name: Fix nullable Supabase client narrowing
+        run: python3 scripts/patch_typescript.py
+
       - name: Install dependencies
         working-directory: ./farsijudge
         run: npm install --no-audit --no-fund
