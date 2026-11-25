@@ -59,7 +59,21 @@ jobs:
           cp supabase/auth-url-settings.md farsijudge/supabase/auth-url-settings.md
           cp supabase/migrations/002_teams_registration_admin_features.sql farsijudge/supabase/migrations/002_teams_registration_admin_features.sql
           cp supabase/migrations/003_farsijudge_platform_upgrade.sql farsijudge/supabase/migrations/003_farsijudge_platform_upgrade.sql
+          cp supabase/migrations/004_profile_edit.sql farsijudge/supabase/migrations/004_profile_edit.sql
           cp supabase/email-templates/confirm-signup.html farsijudge/supabase/email-templates/confirm-signup.html
+
+      - name: Assemble final frontend features
+        run: |
+          mkdir -p farsijudge/scripts
+          cat release-patch/app_00.txt release-patch/app_01.txt > farsijudge/scripts/finalize_app.py
+          for part in release-patch/app_*.b64; do
+            base64 -d "$part" >> farsijudge/scripts/finalize_app.py
+          done
+          : > farsijudge/scripts/final-visual.css
+          for part in release-patch/style_*.b64; do
+            base64 -d "$part" >> farsijudge/scripts/final-visual.css
+          done
+          (cd farsijudge && python3 scripts/finalize_app.py && cat scripts/final-visual.css >> src/style.css)
 
       - name: Upload patched source snapshot (verification)
         uses: actions/upload-artifact@v4
