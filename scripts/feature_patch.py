@@ -128,7 +128,8 @@ replace_once(
         const resource = Array.isArray(resourceRows) ? resourceRows[0] : resourceRows
         resourceUrl = resource?.question_pdf_url || ''
         if (resource?.question_file_path) {
-          const { data: fileData } = await client.storage.from('exam-question-files').createSignedUrl(resource.question_file_path, 3600)
+          const fileTtl = Math.max(60, Math.ceil((examEnd(selectedExam).getTime() - Date.now()) / 1000))
+          const { data: fileData } = await client.storage.from('exam-question-files').createSignedUrl(resource.question_file_path, fileTtl)
           if (fileData?.signedUrl) resourceUrl = fileData.signedUrl
         }
       }
