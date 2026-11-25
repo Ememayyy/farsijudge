@@ -225,6 +225,15 @@ begin
 
   perform 1 from public.teams where id = v_team_id for update;
   if p_accept then
+    if exists (
+      select 1
+      from public.exam_team_registrations etr
+      join public.exams e on e.id = etr.exam_id
+      where etr.team_id = v_team_id
+        and pg_catalog.now() < e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
+    ) then
+      raise exception 'پس از ثبت‌نام تیم در یک آزمون پیش‌رو، ترکیب اعضا تا پایان آن آزمون قفل می‌شود.';
+    end if;
     if exists (select 1 from public.team_members where user_id = (select auth.uid())) then
       raise exception 'ابتدا باید از تیم فعلی خارج شوید.';
     end if;
@@ -435,7 +444,14 @@ using (id = (select auth.uid()) or (select public.is_admin()) or (select public.
 
 drop policy if exists "teams_read_members" on public.teams;
 create policy "teams_read_members" on public.teams for select to authenticated
-using ((select public.is_team_member(id)) or (select public.is_admin()));
+using (
+  (select public.is_team_member(id))
+  or (select public.is_admin())
+  or exists (
+    select 1 from public.team_invitations ti
+    where ti.team_id = teams.id and ti.invited_user_id = (select auth.uid()) and ti.status = 'pending'
+  )
+);
 
 drop policy if exists "team_members_read_team" on public.team_members;
 create policy "team_members_read_team" on public.team_members for select to authenticated
@@ -477,6 +493,10 @@ begin
   with participants as (
     select er.user_id, null::uuid as team_id
     from public.exam_registrations er where er.exam_id = p_exam_id
+    union
+    select a.user_id, null::uuid as team_id
+    from public.exam_attempts a
+    where a.exam_id = p_exam_id and a.team_id is null
     union all
     select t.captain_id as user_id, etr.team_id
     from public.exam_team_registrations etr
