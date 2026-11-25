@@ -435,3 +435,136 @@ css += """
 """
 css_path.write_text(css, encoding="utf-8")
 print("Added participant counts and participant directory UI.")
+
+
+# Show participant counts beside each contest in the signed-in user's dashboard.
+app_path = Path("src/App.tsx")
+app = app_path.read_text(encoding="utf-8")
+
+dashboard_state_anchor = """  const [search, setSearch] = useState('')
+  const filtered = (filter === 'all' ? exams : filter === 'active' ? active : filter === 'upcoming' ? upcoming : ended)"""
+dashboard_state_replacement = """  const [search, setSearch] = useState('')
+  const [dashboardParticipantCounts, setDashboardParticipantCounts] = useState<Record<string, number>>({})
+  const [selectedParticipantContest, setSelectedParticipantContest] = useState<Exam | null>(null)
+  const [dashboardParticipants, setDashboardParticipants] = useState<{ display_name: string; username: string; team_name: string | null; registered_at: string }[]>([])
+  const [dashboardParticipantsLoading, setDashboardParticipantsLoading] = useState(false)
+  const filtered = (filter === 'all' ? exams : filter === 'active' ? active : filter === 'upcoming' ? upcoming : ended)"""
+if app.count(dashboard_state_anchor) != 1:
+    raise SystemExit("Dashboard state insertion anchor mismatch: " + str(app.count(dashboard_state_anchor)))
+app = app.replace(dashboard_state_anchor, dashboard_state_replacement, 1)
+
+dashboard_effect_anchor = """  const firstName = profile?.full_name?.trim().split(/\\s+/)[0] || 'خوش آمدید'
+
+  return <>"""
+dashboard_effect_replacement = """  const firstName = profile?.full_name?.trim().split(/\\s+/)[0] || 'خوش آمدید'
+
+  useEffect(() => {
+    const client = supabase
+    if (!client) return
+    let alive = true
+    const loadCounts = async () => {
+      const { data } = await client.rpc('get_contest_participant_counts')
+      if (!alive || !data) return
+      const next: Record<string, number> = {}
+      data.forEach((row: { exam_id: string; participant_count: number }) => {
+        next[row.exam_id] = Number(row.participant_count) || 0
+      })
+      setDashboardParticipantCounts(next)
+    }
+    void loadCounts()
+    return () => { alive = false }
+  }, [exams.length])
+
+  useEffect(() => {
+    const client = supabase
+    const contest = selectedParticipantContest
+    if (!client || !contest) return
+    let alive = true
+    setDashboardParticipantsLoading(true)
+    setDashboardParticipants([])
+    const loadParticipants = async () => {
+      const { data, error } = await client.rpc('get_contest_participants', { p_exam_id: contest.id })
+      if (!alive) return
+      if (!error && data) setDashboardParticipants(data as { display_name: string; username: string; team_name: string | null; registered_at: string }[])
+      setDashboardParticipantsLoading(false)
+    }
+    void loadParticipants()
+    return () => { alive = false }
+  }, [selectedParticipantContest?.id])
+
+  if (selectedParticipantContest) return <section className="dashboard-participants-page">
+    <div className="dashboard-participants-nav">
+      <button className="back-button" onClick={() => setSelectedParticipantContest(null)}><ArrowLeft size={16} />بازگشت به مسابقه‌ها</button>
+    </div>
+    <section className="participants-hero">
+      <div className="participants-hero-copy">
+        <div className="public-kicker"><span>CONTEST PARTICIPANTS</span><i />فهرست شرکت‌کنندگان</div>
+        <h1>{selectedParticipantContest.title}</h1>
+        <p>افرادی که برای این مسابقه ثبت‌نام کرده‌اند؛ اعضای تیم‌ها نیز به‌صورت جداگانه نمایش داده می‌شوند.</p>
+        <div className="participants-hero-meta"><span><CalendarDays size={16} />{dateText(selectedParticipantContest.starts_at)}</span><span><Users size={16} />{fa(dashboardParticipantCounts[selectedParticipantContest.id] || 0)} شرکت‌کننده</span></div>
+      </div>
+      <div className="participants-hero-count"><Users size={25} /><strong>{fa(dashboardParticipantCounts[selectedParticipantContest.id] || 0)}</strong><span>REGISTERED</span></div>
+    </section>
+    <section className="public-panel participants-list-panel">
+      <div className="participants-list-heading">
+        <div><div className="public-panel-kicker">THE LINEUP</div><h2>شرکت‌کنندگان مسابقه</h2><p>فهرست بر اساس زمان ثبت‌نام مرتب شده است.</p></div>
+        <span className="public-panel-count">{fa(dashboardParticipants.length)} نفر</span>
+      </div>
+      {dashboardParticipantsLoading ? <div className="participants-loading"><span className="participants-spinner" />در حال دریافت فهرست شرکت‌کنندگان...</div>
+        : dashboardParticipants.length === 0 ? <div className="public-empty"><Users size={25} /><b>هنوز کسی ثبت‌نام نکرده است</b><span>به محض ثبت‌نام افراد، نام آن‌ها در این صفحه نمایش داده می‌شود.</span></div>
+        : <div className="participants-grid">{dashboardParticipants.map((person, index) => <article className="participant-card" key={person.username + '-' + index}>
+            <div className="participant-avatar">{(person.display_name || person.username || '?').trim().slice(0, 1)}</div>
+            <div className="participant-info"><b>{person.display_name || person.username}</b><span>@{person.username}</span></div>
+            <div className="participant-kind">{person.team_name ? <><Users size={14} />{person.team_name}</> : <><UserRound size={14} />انفرادی</>}</div>
+            <div className="participant-rank">#{fa(index + 1)}</div>
+          </article>)}</div>}
+    </section>
+    <div className="participants-footer"><ShieldCheck size={16} />فقط نام نمایشی و نام کاربری افراد نمایش داده می‌شود؛ ایمیل و اطلاعات خصوصی مخفی می‌ماند.</div>
+  </section>
+
+  return <>"""
+if app.count(dashboard_effect_anchor) != 1:
+    raise SystemExit("Dashboard effects insertion anchor mismatch: " + str(app.count(dashboard_effect_anchor)))
+app = app.replace(dashboard_effect_anchor, dashboard_effect_replacement, 1)
+
+dashboard_cards_anchor = """        : <div className="exam-grid">{filtered.map((exam) => <ExamCard key={exam.id} exam={exam} now={now} onOpen={() => onOpen(exam)}
+          registered={myRegistrations.includes(exam.id) || myTeamRegistrations.includes(exam.id)}
+          teamMember={Boolean(team)} teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} />)}</div>}"""
+dashboard_cards_replacement = """        : <div className="exam-grid">{filtered.map((exam) => <div className="dashboard-exam-card-wrap" key={exam.id}>
+          <button type="button" className="dashboard-participant-count" onClick={() => setSelectedParticipantContest(exam)} aria-label={"نمایش شرکت‌کنندگان " + exam.title}>
+            <span>#</span>{fa(dashboardParticipantCounts[exam.id] || 0)}
+          </button>
+          <ExamCard exam={exam} now={now} onOpen={() => onOpen(exam)}
+            registered={myRegistrations.includes(exam.id) || myTeamRegistrations.includes(exam.id)}
+            teamMember={Boolean(team)} teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} />
+        </div>)}</div>}"""
+if app.count(dashboard_cards_anchor) != 1:
+    raise SystemExit("Dashboard exam-card insertion anchor mismatch: " + str(app.count(dashboard_cards_anchor)))
+app = app.replace(dashboard_cards_anchor, dashboard_cards_replacement, 1)
+
+app_path.write_text(app, encoding="utf-8")
+
+css_path = Path("src/style.css")
+css = css_path.read_text(encoding="utf-8")
+css += """
+.dashboard-exam-card-wrap { position:relative; min-width:0; height:100%; }
+.dashboard-exam-card-wrap > .exam-card { height:100%; }
+.dashboard-participant-count {
+  position:absolute; z-index:5; top:12px; left:12px; display:inline-flex; align-items:center; gap:5px;
+  min-height:29px; padding:5px 10px; border:1px solid rgba(139,112,245,.3); border-radius:999px;
+  background:var(--panel); color:var(--accent); box-shadow:0 3px 12px rgba(35,25,75,.1);
+  font:inherit; font-size:11px; font-weight:850; cursor:pointer; direction:ltr;
+  transition:transform .16s ease,background .16s ease,box-shadow .16s ease;
+}
+.dashboard-participant-count span { font-size:14px; line-height:1; opacity:.8; }
+.dashboard-participant-count:hover { transform:translateY(-2px); background:rgba(139,112,245,.12); box-shadow:0 6px 18px rgba(90,65,180,.16); }
+.dashboard-participant-count:focus-visible { outline:3px solid rgba(157,125,255,.65); outline-offset:3px; }
+.dashboard-participants-page { width:100%; min-width:0; }
+.dashboard-participants-nav { display:flex; justify-content:flex-start; margin:0 0 12px; }
+.dashboard-participants-page .participants-hero { margin-top:8px; }
+@media(max-width:640px) {
+  .dashboard-participant-count { top:9px; left:9px; min-height:27px; padding:4px 8px; }
+}
+"""
+css_path.write_text(css, encoding="utf-8")
+print("Added participant counts and directory navigation inside each user's dashboard.");
