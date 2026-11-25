@@ -177,7 +177,8 @@ replace_once(
         }, { onConflict: 'exam_id,user_id,question_number' })
       })
 """,
-"""      const operations = (Object.entries(answerValues) as [string, string][]).map(async ([question, raw]) => {
+"""      const changedAnswers = { ...pendingAnswerChanges }
+      const operations = (Object.entries(changedAnswers) as [string, string][]).map(async ([question, raw]) => {
         const questionNumber = Number(question)
         if (raw.trim() && !validNumber(raw)) return null
         return client.rpc('save_exam_answer', {
@@ -188,6 +189,94 @@ replace_once(
       })
 """,
 "shared autosave"
+)
+
+replace_once(
+"""  const [answerDirty, setAnswerDirty] = useState(false)""",
+"""  const [answerDirty, setAnswerDirty] = useState(false)
+  const [pendingAnswerChanges, setPendingAnswerChanges] = useState<Record<number, string>>({})""",
+"pending team answer changes"
+)
+replace_once(
+"""    setAnswerValues({})
+    setExamResult(null)
+    setAnswerDirty(false)
+    setPage('exam')
+""",
+"""    setAnswerValues({})
+    setExamResult(null)
+    setAnswerDirty(false)
+    setPendingAnswerChanges({})
+    setPage('exam')
+""",
+"reset pending answers on exam open"
+)
+replace_once(
+"""  const saveAnswer = (questionNumber: number, value: string) => {
+    setAnswerValues((current) => ({ ...current, [questionNumber]: value }))
+    setAnswerDirty(true)
+  }
+""",
+"""  const saveAnswer = (questionNumber: number, value: string) => {
+    setAnswerValues((current) => ({ ...current, [questionNumber]: value }))
+    setPendingAnswerChanges((current) => ({ ...current, [questionNumber]: value }))
+    setAnswerDirty(true)
+  }
+""",
+"track only edited questions"
+)
+replace_once(
+"    if (!answerDirty || !selectedExam || page !== 'exam' || selectedStatus !== 'active') return",
+"    if (!selectedExam || page !== 'exam' || selectedStatus !== 'active' || Object.keys(pendingAnswerChanges).length === 0) return",
+"autosave only dirty questions"
+)
+replace_once(
+"  }, [answerValues, answerDirty, selectedExam?.id, page, isDemo, session?.user.id])",
+"  }, [pendingAnswerChanges, selectedExam?.id, page, selectedStatus, isDemo, session?.user.id])",
+"autosave pending answer dependencies"
+)
+replace_once(
+"""      if (isDemo) {
+        setSaving(false)
+        setAnswerDirty(false)
+        return
+      }
+""",
+"""      if (isDemo) {
+        setSaving(false)
+        setAnswerDirty(false)
+        setPendingAnswerChanges({})
+        return
+      }
+""",
+"clear pending demo answers"
+)
+replace_once(
+"""      const responses = await Promise.all(operations)
+      const error = responses.find((item) => item && item.error)?.error
+      if (error) setNotice({ type: 'error', text: `ذخیره پاسخ انجام نشد: ${error.message}` })
+      else setNotice({ type: 'success', text: 'پاسخ‌ها ذخیره شدند.' })
+      setSaving(false)
+      setAnswerDirty(false)
+""",
+"""      const responses = await Promise.all(operations)
+      const error = responses.find((item) => item && item.error)?.error
+      if (error) setNotice({ type: 'error', text: `ذخیره پاسخ انجام نشد: ${error.message}` })
+      else {
+        setNotice({ type: 'success', text: 'پاسخ‌ها ذخیره شدند.' })
+        setPendingAnswerChanges((current) => {
+          const next = { ...current }
+          for (const [question, raw] of Object.entries(changedAnswers)) {
+            const key = Number(question)
+            if (next[key] === raw) delete next[key]
+          }
+          return next
+        })
+      }
+      setSaving(false)
+      setAnswerDirty(false)
+""",
+"clear only successfully saved team changes"
 )
 replace_once(
 """      const [r, p] = await Promise.all([
