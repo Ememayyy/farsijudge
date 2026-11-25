@@ -44,6 +44,7 @@ jobs:
       - name: Apply auth, branding, and admin setup
         run: |
           patch -p1 < farsijudge-ui-auth.patch
+          sed -i 's/آزمون‌یار/فارسی جاج/g; s/سامانه آزمون آنلاین/سامانه برگزاری مسابقه آنلاین/g' farsijudge/index.html
           python3 scripts/patch_typescript.py
           mkdir -p farsijudge/scripts
           cp scripts/feature_patch.py farsijudge/scripts/feature_patch.py
