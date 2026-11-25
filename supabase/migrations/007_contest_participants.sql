@@ -65,7 +65,7 @@ as $$
   join public.team_members tm on tm.team_id = etr.team_id
   join public.profiles p on p.id = tm.user_id
   where etr.exam_id = p_exam_id
-  order by registered_at asc, username asc;
+  order by 4 asc, 2 asc;
 $$;
 
 revoke all on function public.get_contest_participant_counts() from public;
