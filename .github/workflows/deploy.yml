@@ -65,12 +65,26 @@ jobs:
       - name: Assemble final frontend features
         run: |
           mkdir -p farsijudge/scripts
-          cat release-patch/app_00.txt release-patch/app_01.txt > farsijudge/scripts/finalize_app.py
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("release-patch")
+          a = (root / "app_00.txt").read_text(encoding="utf-8")
+          b = (root / "app_01.txt").read_text(encoding="utf-8")
+          assert len(a) == 4500, f"app_00 length: {len(a)}"
+          assert len(b) >= 4500, f"app_01 length: {len(b)}"
+          Path("farsijudge/scripts/finalize_app.py").write_text(a + b[:4500], encoding="utf-8")
+          PY
           for part in release-patch/app_*.b64; do
+            case "$part" in
+              *app_06.b64|*app_08.b64) echo "Skipping replaced damaged $part"; continue ;;
+            esac
+            echo "Decoding $part"
             base64 -d "$part" >> farsijudge/scripts/finalize_app.py
           done
           : > farsijudge/scripts/final-visual.css
           for part in release-patch/style_*.b64; do
+            case "$part" in *style_00.b64) echo "Skipping replaced damaged $part"; continue ;; esac
+            echo "Decoding $part"
             base64 -d "$part" >> farsijudge/scripts/final-visual.css
           done
           (cd farsijudge && python3 scripts/finalize_app.py && cat scripts/final-visual.css >> src/style.css)
