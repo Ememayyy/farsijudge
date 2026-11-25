@@ -1,3 +1,3 @@
-import base64, zlib
+import base64, bz2
 
-PAYLOAD = r'''# upload probe
+PAYLOAD = r'''
