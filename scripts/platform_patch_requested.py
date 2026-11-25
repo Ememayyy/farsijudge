@@ -89,7 +89,7 @@ const_old = """  const registerForExam = async (exam: Exam) => {
     })
     if (error) notify('ثبت‌نام انجام نشد: ' + error.message, 'error')
     else {
-      notify(team ? 'تیم با موفقیت در آزمون ثبت‌نام شد.' : 'در مسابقه ثبت‌نام شدید.', 'success')
+      notify(team ? 'تیم با موفقیت در مسابقه ثبت‌نام شد.' : 'در مسابقه ثبت‌نام شدید.', 'success')
       await loadMainData()
     }
   }"""
