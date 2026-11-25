@@ -11,7 +11,7 @@ def replace_once(old: str, new: str, label: str) -> None:
     source = source.replace(old, new, 1)
 
 replace_once(
-"""  GraduationCap, LayoutDashboard, LogOut, Moon, Plus, RefreshCw, ShieldCheck,
+"""  LayoutDashboard, LogOut, Moon, Plus, RefreshCw, ShieldCheck,
   Sun, UserRound, Users, XCircle,
 """,
 """  GraduationCap, LayoutDashboard, LogOut, Moon, Plus, RefreshCw, ShieldCheck,
@@ -454,7 +454,7 @@ replace_once(
 "team nav"
 )
 replace_once(
-"""        <div className="breadcrumb"><span>آزمون‌یار</span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : 'پروفایل من'}</b></div>
+"""        <div className="breadcrumb"><span className="topbar-brand"><span className="brand-mark"><img src={brandLogo} alt="" /></span><span>آزمون‌یار</span></span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b></div>
 """,
 """        <div className="breadcrumb"><span>آزمون‌یار</span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b></div>
 """,
