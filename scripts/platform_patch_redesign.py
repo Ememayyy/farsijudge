@@ -13,7 +13,7 @@ def once(old, new, label):
 once(
 """Sun, UserRound, Users, XCircle, UserPlus, Pencil, Trash2, FileUp, ExternalLink,""",
 """Sun, UserRound, Users, XCircle, UserPlus, Pencil, Trash2, FileUp, ExternalLink,
-  Bell, CalendarDays, ChevronDown, Home, Menu, Search, Settings, Sparkles, Trophy, X,""",
+  CalendarDays, ChevronDown, Home, Menu, Search, Sparkles, Trophy,""",
 "redesign icon imports"
 )
 once(
@@ -33,10 +33,11 @@ once(
   }, [theme])
 
   useEffect(() => {
-    if (!supabase || isLoggedIn) return
+    const client = supabase
+    if (!client || isLoggedIn) return
     let alive = true
     const loadPublicContests = async () => {
-      const { data } = await supabase.rpc('get_public_contests')
+      const { data } = await client.rpc('get_public_contests')
       if (alive && data) setExams(data as Exam[])
     }
     void loadPublicContests()
@@ -50,7 +51,7 @@ once(
 """  return <div className={"app-shell redesign-shell " + (sidebarOpen ? "sidebar-open" : "")}>
     <div className="mobile-appbar">
       <button className="mobile-menu-toggle" onClick={() => setSidebarOpen(true)} aria-label="باز کردن منو"><Menu size={21} /></button>
-      <div className="mobile-appbar-brand"><span className="brand-mark"><GraduationCap size={20} /></span><b>فارسی جاج</b></div>
+      <div className="mobile-appbar-brand"><span className="brand-mark"><BookOpen size={20} /></span><b>فارسی جاج</b></div>
       <button className="icon-button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="تغییر پوسته">{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button>
     </div>
     <aside className="sidebar">""",
@@ -222,7 +223,7 @@ const_welcome = """function WelcomePage({ theme, onToggleTheme, onLogin, onRegis
   const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length
   return <div className="public-site">
     <header className="public-header">
-      <a href="#public-top" className="public-brand"><span className="public-brand-mark"><GraduationCap size={23} /></span><span>فارسی جاج</span><small>FARSI JUDGE</small></a>
+      <a href="#public-top" className="public-brand"><span className="public-brand-mark"><BookOpen size={23} /></span><span>فارسی جاج</span><small>FARSI JUDGE</small></a>
       <nav className="public-nav">
         <a className="current" href="#public-top"><Home size={15} />خانه</a>
         <a href="#public-contests"><Trophy size={15} />مسابقه‌ها</a>
@@ -325,6 +326,8 @@ const_welcome = """function WelcomePage({ theme, onToggleTheme, onLogin, onRegis
 welcome_start = s.index("function WelcomePage(")
 welcome_end = s.index("\nfunction RegistrationPage(", welcome_start)
 s = s[:welcome_start] + const_welcome + s[welcome_end:]
+
+s = s.replace("function ClipboardIcon() { return <BookOpen size={20} /> }\\n", "")
 
 p.write_text(s, encoding="utf-8")
 
