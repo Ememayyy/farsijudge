@@ -683,9 +683,7 @@ source = source[:card_start] + """function ExamCard({ exam, now, onOpen, registe
     <div className="exam-meta"><div><Clock3 size={15} /><span>{dateText(exam.starts_at)}</span></div><div><Users size={15} /><span>مدت آزمون: {fa(exam.duration_minutes)} دقیقه</span></div></div>
     <div className="exam-registration">
       {registered ? <span className="registration-done"><CheckCircle2 size={15} />ثبت‌نام انجام شده</span>
-        : status === 'upcoming' ? (teamMember && !teamCaptain
-          ? <span className="registration-hint">ثبت‌نام تیمی با کاپیتان</span>
-          : <button className="button soft small" onClick={onRegister}><UserPlus size={15} />{teamMember ? 'ثبت‌نام تیمی' : 'ثبت‌نام در آزمون'}</button>)
+        : status === 'upcoming' ? <button className="button soft small" onClick={onRegister} title={teamMember && !teamCaptain ? 'می‌توانید انفرادی ثبت‌نام کنید؛ ثبت‌نام تیمی با کاپیتان است.' : 'نوع ثبت‌نام را انتخاب کنید.'}><UserPlus size={15} />انتخاب نوع ثبت‌نام</button>
         : <span className="registration-hint">برای شرکت باید پیش از شروع ثبت‌نام کنید</span>}
       <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
         {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده نتیجه' : 'جزئیات آزمون'}<ChevronLeft size={16} />
