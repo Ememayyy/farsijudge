@@ -14,65 +14,6 @@ alter table public.exams
 create index if not exists exams_tags_gin_idx on public.exams using gin(tags);
 create index if not exists exams_release_at_idx on public.exams(results_release_at);
 
--- User-facing session registry: the newest authenticated device becomes the only active one.
-create table if not exists public.user_active_sessions (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  session_id uuid not null,
-  activated_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.user_active_sessions enable row level security;
-revoke all on public.user_active_sessions from public, anon, authenticated;
-
-create or replace function public.activate_my_single_session()
-returns void
-language plpgsql security definer set search_path = ''
-as $$
-declare
-  v_uid uuid := (select auth.uid());
-  v_session_id uuid := nullif((select auth.jwt() ->> 'session_id'), '')::uuid;
-begin
-  if v_uid is null or v_session_id is null then
-    raise exception 'شناسه نشست معتبر نیست؛ دوباره وارد حساب شوید.';
-  end if;
-  insert into public.user_active_sessions(user_id, session_id, activated_at, updated_at)
-  values (v_uid, v_session_id, pg_catalog.now(), pg_catalog.now())
-  on conflict (user_id) do update set
-    session_id = excluded.session_id,
-    activated_at = excluded.activated_at,
-    updated_at = excluded.updated_at;
-end;
-$$;
-revoke all on function public.activate_my_single_session() from public, anon;
-grant execute on function public.activate_my_single_session() to authenticated;
-
-create or replace function public.is_my_single_session_active()
-returns boolean
-language sql stable security definer set search_path = ''
-as $$
-  select exists (
-    select 1
-    from public.user_active_sessions s
-    where s.user_id = (select auth.uid())
-      and s.session_id = nullif((select auth.jwt() ->> 'session_id'), '')::uuid
-  );
-$$;
-revoke all on function public.is_my_single_session_active() from public, anon;
-grant execute on function public.is_my_single_session_active() to authenticated;
-
-create or replace function public.require_my_single_session()
-returns void
-language plpgsql stable security definer set search_path = ''
-as $$
-begin
-  if not (select public.is_my_single_session_active()) then
-    raise exception 'این حساب در دستگاه دیگری وارد شده است. برای ادامه دوباره وارد شوید.';
-  end if;
-end;
-$$;
-revoke all on function public.require_my_single_session() from public, anon;
-grant execute on function public.require_my_single_session() to authenticated;
-
 -- Database-level cap: exactly three people total, captain included.
 create or replace function public.enforce_team_member_limit()
 returns trigger
@@ -97,7 +38,7 @@ create trigger team_member_limit_before_write
 before insert or update of team_id on public.team_members
 for each row execute function public.enforce_team_member_limit();
 
--- Replace team creation so it uses the active single-device session.
+-- Team creation uses the current team membership and capacity rules.
 create or replace function public.create_team(p_name text)
 returns uuid
 language plpgsql security definer set search_path = ''
@@ -105,7 +46,6 @@ as $$
 declare v_team_id uuid; v_uid uuid := (select auth.uid());
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
-  perform public.require_my_single_session();
   if nullif(btrim(p_name), '') is null or char_length(btrim(p_name)) > 40 then
     raise exception 'نام تیم باید بین ۲ تا ۴۰ کاراکتر باشد.';
   end if;
@@ -135,7 +75,6 @@ declare
   v_pending_count integer;
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
-  perform public.require_my_single_session();
   select tm.team_id into v_team_id
   from public.team_members tm
   where tm.user_id = v_uid and tm.role = 'captain';
@@ -183,7 +122,6 @@ declare
   v_member_count integer;
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
-  perform public.require_my_single_session();
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_uid::text, 0));
   select i.team_id into v_team_id
   from public.team_invitations i
@@ -237,7 +175,6 @@ declare
   v_next_captain uuid;
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
-  perform public.require_my_single_session();
   select team_id, role into v_team_id, v_role
   from public.team_members where user_id = v_uid;
   if v_team_id is null then raise exception 'شما عضو هیچ تیمی نیستید.'; end if;
@@ -293,7 +230,6 @@ declare
   v_registration_closes_at timestamptz;
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
-  perform public.require_my_single_session();
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_uid::text, 0));
 
   select e.starts_at,
@@ -389,7 +325,6 @@ as $$
 declare v_uid uuid := (select auth.uid()); v_team_id uuid; v_captain_id uuid;
 begin
   if v_uid is null then raise exception 'ورود به حساب کاربری الزامی است.'; end if;
-  perform public.require_my_single_session();
   if not exists (
     select 1 from public.exams e
     where e.id = p_exam_id and e.is_published
@@ -435,7 +370,6 @@ declare
   v_captain_id uuid;
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
-  perform public.require_my_single_session();
   if not exists (
     select 1 from public.exams e
     where e.id = p_exam_id and e.is_published
@@ -640,7 +574,6 @@ declare
   v_release_at timestamptz;
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
-  perform public.require_my_single_session();
 
   select coalesce(
     e.results_release_at,
@@ -700,63 +633,6 @@ end;
 $$;
 revoke all on function public.admin_delete_user(uuid) from public, anon;
 grant execute on function public.admin_delete_user(uuid) to authenticated;
-
--- Add session validity to all team/result reads; stale devices lose protected data access.
-drop policy if exists "teams_read_members" on public.teams;
-create policy "teams_read_members" on public.teams for select to authenticated
-using (
-  (select public.is_my_single_session_active())
-  and (
-    (select public.is_team_member(id))
-    or (select public.is_admin())
-    or exists (
-      select 1 from public.team_invitations ti
-      where ti.team_id = teams.id and ti.invited_user_id = (select auth.uid()) and ti.status = 'pending'
-    )
-  )
-);
-drop policy if exists "team_members_read_team" on public.team_members;
-create policy "team_members_read_team" on public.team_members for select to authenticated
-using ((select public.is_my_single_session_active()) and ((select public.is_team_member(team_id)) or (select public.is_admin())));
-drop policy if exists "team_invites_read_participants" on public.team_invitations;
-create policy "team_invites_read_participants" on public.team_invitations for select to authenticated
-using ((select public.is_my_single_session_active()) and (invited_user_id = (select auth.uid()) or invited_by = (select auth.uid()) or (select public.is_admin())));
-drop policy if exists "exam_registrations_read_owner_admin" on public.exam_registrations;
-create policy "exam_registrations_read_owner_admin" on public.exam_registrations for select to authenticated
-using ((select public.is_my_single_session_active()) and (user_id = (select auth.uid()) or (select public.is_admin())));
-drop policy if exists "exam_team_registrations_read_members" on public.exam_team_registrations;
-create policy "exam_team_registrations_read_members" on public.exam_team_registrations for select to authenticated
-using ((select public.is_my_single_session_active()) and ((select public.is_team_member(team_id)) or (select public.is_admin())));
-drop policy if exists "answers_read_own_or_admin" on public.exam_answers;
-create policy "answers_read_own_or_admin" on public.exam_answers for select to authenticated
-using ((select public.is_my_single_session_active()) and (
-  user_id = (select auth.uid())
-  or (team_id is not null and (select public.is_team_member(team_id)))
-  or (select public.is_admin())
-));
-drop policy if exists "results_read_after_release" on public.exam_results;
-create policy "results_read_after_release" on public.exam_results for select to authenticated
-using (
-  (select public.is_my_single_session_active())
-  and (
-    (select public.is_admin())
-    or (
-      pg_catalog.now() >= coalesce(
-        (select e.results_release_at from public.exams e where e.id = exam_results.exam_id),
-        (select coalesce(e.end_at_override, e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes))
-         from public.exams e where e.id = exam_results.exam_id)
-      )
-      and (user_id = (select auth.uid()) or (team_id is not null and (select public.is_team_member(team_id))))
-    )
-  )
-);
-drop policy if exists "attempts_read_own_or_admin" on public.exam_attempts;
-create policy "attempts_read_own_or_admin" on public.exam_attempts for select to authenticated
-using ((select public.is_my_single_session_active()) and (
-  user_id = (select auth.uid())
-  or (team_id is not null and (select public.is_team_member(team_id)))
-  or (select public.is_admin())
-));
 
 -- Enable Supabase Realtime for shared team answers.
 do $$
