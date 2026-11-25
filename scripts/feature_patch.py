@@ -69,7 +69,7 @@ replace_once(
 """,
 """    const [profileResponse, examResponse, membershipResponse, invitationResponse, ownRegistrationResponse, teamRegistrationResponse] = await Promise.all([
       supabase.from('profiles').select('id,full_name,role,username').eq('id', session.user.id).single(),
-      supabase.from('exams').select('id,title,description,starts_at,duration_minutes,is_published,question_pdf_url,question_file_path,created_at').order('starts_at', { ascending: false }),
+      supabase.from('exams').select('id,title,description,starts_at,duration_minutes,is_published,created_at').order('starts_at', { ascending: false }),
       supabase.from('team_members').select('team_id,role').eq('user_id', session.user.id).maybeSingle(),
       supabase.from('team_invitations').select('id,team_id,invited_by,created_at,teams(name)').eq('invited_user_id', session.user.id).eq('status', 'pending').order('created_at', { ascending: false }),
       supabase.from('exam_registrations').select('exam_id').eq('user_id', session.user.id),
@@ -123,10 +123,12 @@ replace_once(
         answersQuery,
       ])
       let resourceUrl = ''
-      if (isSharedTeamAttempt || personalRegistrationResponse.data) {
-        resourceUrl = selectedExam.question_pdf_url || ''
-        if (selectedExam.question_file_path) {
-          const { data: fileData } = await client.storage.from('exam-question-files').createSignedUrl(selectedExam.question_file_path, 3600)
+      if ((isSharedTeamAttempt || personalRegistrationResponse.data) && selectedStatus === 'active') {
+        const { data: resourceRows } = await client.rpc('get_exam_question_resource', { p_exam_id: selectedExam.id })
+        const resource = Array.isArray(resourceRows) ? resourceRows[0] : resourceRows
+        resourceUrl = resource?.question_pdf_url || ''
+        if (resource?.question_file_path) {
+          const { data: fileData } = await client.storage.from('exam-question-files').createSignedUrl(resource.question_file_path, 3600)
           if (fileData?.signedUrl) resourceUrl = fileData.signedUrl
         }
       }
@@ -291,11 +293,13 @@ insert = """  const createTeam = async (event: FormEvent) => {
 
   const loadExamForEdit = async (exam: Exam) => {
     if (!supabase) return
-    const [questionResponse, keyResponse] = await Promise.all([
+    const [questionResponse, keyResponse, resourceResponse] = await Promise.all([
       supabase.from('exam_questions').select('question_number,points').eq('exam_id', exam.id).order('question_number'),
       supabase.from('exam_answer_keys').select('question_number,correct_answer').eq('exam_id', exam.id).order('question_number'),
+      supabase.rpc('get_exam_question_resource', { p_exam_id: exam.id }),
     ])
-    if (questionResponse.error || keyResponse.error) return notify('دریافت پاسخ‌نامه برای ویرایش ناموفق بود.', 'error')
+    if (questionResponse.error || keyResponse.error || resourceResponse.error) return notify('دریافت اطلاعات آزمون برای ویرایش ناموفق بود.', 'error')
+    const resource = Array.isArray(resourceResponse.data) ? resourceResponse.data[0] : resourceResponse.data
     const answerMap = new Map((keyResponse.data || []).map((row) => [row.question_number, String(row.correct_answer)]))
     setAdminTitle(exam.title)
     setAdminDescription(exam.description || '')
@@ -306,8 +310,8 @@ insert = """  const createTeam = async (event: FormEvent) => {
       answer: answerMap.get(row.question_number) || '',
       points: String(row.points),
     })))
-    setQuestionPdfUrl(exam.question_pdf_url || '')
-    setQuestionFilePath(exam.question_file_path || null)
+    setQuestionPdfUrl(resource?.question_pdf_url || '')
+    setQuestionFilePath(resource?.question_file_path || null)
     setQuestionFile(null)
     setEditingExamId(exam.id)
     setPage('admin')
