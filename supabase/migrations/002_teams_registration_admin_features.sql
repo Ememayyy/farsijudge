@@ -229,6 +229,7 @@ begin
   for update;
   if v_team_id is null then raise exception 'این دعوت‌نامه معتبر یا فعال نیست.'; end if;
 
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended((select auth.uid())::text, 0));
   perform 1 from public.teams where id = v_team_id for update;
   if p_accept then
     if exists (
@@ -275,6 +276,7 @@ as $$
 declare v_uid uuid := (select auth.uid());
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_uid::text, 0));
   if not exists (select 1 from public.exams e where e.id = p_exam_id and e.is_published) then
     raise exception 'آزمون پیدا نشد یا منتشر نشده است.';
   end if;
