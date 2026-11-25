@@ -446,24 +446,6 @@ if s.count(anchor) != 1:
     raise SystemExit("Live control/report insertion point mismatch")
 s = s.replace(anchor, controls_and_review + anchor, 1)
 
-once(
-"""      {registered ? <span className="registration-done"><CheckCircle2 size={15} />ثبت‌نام انجام شده</span>
-        : status === 'upcoming' ? (teamMember && !teamCaptain
-          ? <span className="registration-hint">ثبت‌نام تیمی با کاپیتان</span>
-          : <button className="button soft small" onClick={onRegister}><UserPlus size={15} />{teamMember ? 'ثبت‌نام تیمی' : 'ثبت‌نام در آزمون'}</button>)
-        : <span className="registration-hint">برای شرکت باید پیش از شروع ثبت‌نام کنید</span>}
-      <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
-        {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده نتیجه' : 'جزئیات آزمون'}<ChevronLeft size={16} />
-      </button>""",
-"""      {registered ? <span className="registration-done"><CheckCircle2 size={15} />ثبت‌نام انجام شده</span>
-        : status === 'upcoming' ? <button className="button soft small" onClick={onRegister} title={teamMember && !teamCaptain ? 'می‌توانید انفرادی ثبت‌نام کنید؛ ثبت‌نام تیمی با کاپیتان است.' : 'نوع ثبت‌نام را انتخاب کنید.'}><UserPlus size={15} />انتخاب نوع ثبت‌نام</button>
-        : <span className="registration-hint">برای شرکت باید پیش از شروع ثبت‌نام کنید</span>}
-      <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
-        {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده نتیجه' : 'جزئیات آزمون'}<ChevronLeft size={16} />
-      </button>""",
-"allow every participant to choose individual or team registration"
-)
-
 p.write_text(s, encoding="utf-8")
 
 cssp = Path("src/style.css")
