@@ -130,3 +130,129 @@ rep(
 "registration page")
 
 p.write_text(s, encoding="utf-8")
+
+
+# Independent browser-history screens. Hash routes work on GitHub Pages without server rewrites.
+p = Path("src/App.tsx")
+s = p.read_text(encoding="utf-8")
+def rep2(old, new, label):
+    global s
+    n = s.count(old)
+    if n != 1:
+        raise SystemExit(label + ": expected one match, got " + str(n))
+    s = s.replace(old, new, 1)
+
+rep2(
+"type Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team'",
+"type Page = 'landing' | 'login' | 'register' | 'dashboard' | 'exam' | 'admin' | 'profile' | 'team' | 'registerExam'",
+"page route type")
+rep2(
+"  const [page, setPage] = useState<Page>('dashboard')",
+"""  const [page, setPageState] = useState<Page>(() => (window.location.hash.slice(2) as Page) || 'landing')
+  const setPage = (next: Page) => {
+    window.history.pushState({ page: next }, '', window.location.pathname + '#/' + next)
+    setPageState(next)
+  }
+  useEffect(() => {
+    const onPop = () => setPageState((window.location.hash.slice(2) as Page) || 'landing')
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+""",
+"history routing state")
+
+rep2(
+"  const [profiles, setProfiles] = useState<Profile[]>([])",
+"""  const [profiles, setProfiles] = useState<Profile[]>([])
+  const [mobileMenu, setMobileMenu] = useState(false)
+  const [cookieAccepted, setCookieAccepted] = useState(localStorage.getItem('fj-cookie-consent') === 'yes')""",
+"mobile and cookie state")
+
+rep2(
+"  const isLoggedIn = Boolean(userId)",
+"""  const isLoggedIn = Boolean(userId)
+  useEffect(() => {
+    if (isLoggedIn && page === 'landing') setPage('dashboard')
+    if (page === 'register') setAuthMode('register')
+    if (page === 'login') setAuthMode('login')
+  }, [isLoggedIn, page])""",
+"route state synchronization")
+
+rep2(
+"  if (!isLoggedIn) {",
+"""  if (!isLoggedIn && page === 'landing') return <LandingPage
+    onLogin={() => { setAuthMode('login'); setPage('login') }}
+    onRegister={() => { setAuthMode('register'); setPage('register') }}
+    cookieAccepted={cookieAccepted}
+    onCookie={() => { localStorage.setItem('fj-cookie-consent', 'yes'); setCookieAccepted(true) }}
+  />
+
+  if (!isLoggedIn) {""",
+"public landing branch")
+
+# Keep successful authentication on its own route and preserve the browser back stack.
+s = s.replace(
+"else if (data.session) notify('حساب شما ساخته شد. خوش آمدید!', 'success')",
+"else if (data.session) { notify('حساب فارسی جاج ساخته شد.', 'success'); setPage('dashboard') }"
+)
+s = s.replace(
+"if (error) notify('ورود انجام نشد؛ ایمیل و رمز عبور را بررسی کنید.', 'error')\n      else notify('با موفقیت وارد شدید.', 'success')",
+"if (error) notify('ورود انجام نشد؛ ایمیل و رمز عبور را بررسی کنید.', 'error')\n      else { notify('با موفقیت وارد شدید.', 'success'); setPage('dashboard') }"
+)
+s = s.replace(
+"setAuthMode(authMode === 'login' ? 'register' : 'login')",
+"setAuthMode(authMode === 'login' ? 'register' : 'login'); setPage(authMode === 'login' ? 'register' : 'login')"
+)
+
+# Desktop sidebar on mobile becomes a hamburger drawer with a backdrop.
+rep2(
+'    <aside className="sidebar">',
+'    <aside className={mobileMenu ? "sidebar mobile-open" : "sidebar"}>',
+"sidebar drawer")
+rep2(
+'      <div className="brand"><span className="brand-mark"><GraduationCap size={25} /></span><span>فارسی جاج</span></div>',
+'      <div className="brand"><span className="brand-mark"><GraduationCap size={25} /></span><span>فارسی جاج</span><button className="mobile-close" onClick={() => setMobileMenu(false)}><XCircle size={18}/></button></div>',
+"sidebar brand mobile close")
+rep2(
+'        <div className="breadcrumb"><span>فارسی جاج</span>',
+'        <div className="breadcrumb"><button className="mobile-menu-toggle" onClick={() => setMobileMenu(true)} aria-label="بازکردن منو"><Menu size={19}/></button><span>فارسی جاج</span>',
+"mobile hamburger header")
+
+# Overlay and cookie consent.
+rep2(
+'    {notice && <div className="toast-wrap"><Notice notice={notice} onClose={() => setNotice(null)} /></div>}',
+"""    {mobileMenu && <button className="sidebar-backdrop" onClick={() => setMobileMenu(false)} aria-label="بستن منو"/>}
+    {!cookieAccepted && <div className="fj-cookie"><ShieldCheck/><span>برای نگه‌داشتن ورود و ترجیحات از ذخیره‌سازی مرورگر استفاده می‌شود؛ رمز عبور در فارسی جاج ذخیره نمی‌شود.</span><button onClick={() => { localStorage.setItem('fj-cookie-consent','yes'); setCookieAccepted(true) }}>می‌پذیرم</button></div>}
+    {notice && <div className="toast-wrap"><Notice notice={notice} onClose={() => setNotice(null)} /></div>}""",
+"cookie and drawer overlay")
+
+# Public landing page with concise product positioning.
+insert_at = s.index("function Dashboard(")
+landing = """function LandingPage({onLogin,onRegister,cookieAccepted,onCookie}:{onLogin:()=>void;onRegister:()=>void;cookieAccepted:boolean;onCookie:()=>void}) {
+  return <div className="fj-public-home">
+    <header className="fj-public-nav"><div className="fj-brand"><span className="brand-mark"><GraduationCap/></span><b>فارسی جاج</b></div>
+      <nav><a href="#fj-features">امکانات</a><a href="#fj-about">درباره فارسی جاج</a></nav>
+      <div><button className="button soft" onClick={onLogin}>ورود</button><button className="button primary" onClick={onRegister}>ساخت حساب <ChevronLeft/></button></div>
+    </header>
+    <section className="fj-public-hero"><div><small className="eyebrow">FARSI-JUDGE / COMPETITIVE PLATFORM</small>
+      <h1>رقابت جدی‌تر؛<br/><em>پیشرفت واقعی‌تر.</em></h1>
+      <p>فارسی جاج محیطی یکپارچه برای برگزاری مسابقه‌های علمی و برنامه‌نویسی است؛ از ثبت‌نام و رقابت تیمی تا ذخیره پاسخ‌ها، رتبه‌بندی و کارنامه دقیق.</p>
+      <div><button className="button primary large" onClick={onRegister}>شروع رقابت <ArrowLeft/></button><button className="button soft large" onClick={onLogin}>ورود به حساب</button></div>
+    </div><div className="fj-public-art"><div className="fj-public-orbit"/><div className="fj-public-emblem"><Trophy/><b>FJ</b></div><span>01 · GRAPH THEORY</span></div></section>
+    <section className="fj-public-features" id="fj-features"><h2>همه‌چیز برای یک مسابقه حرفه‌ای</h2><div>
+      <article><Clock3/><b>زمان‌بندی دقیق</b><p>شروع و پایان کنترل‌شده، شمارش معکوس و تمدید زمان.</p></article>
+      <article><Users/><b>رقابت تیمی</b><p>تیم سه‌نفره، دعوت اعضا و پاسخ‌های مشترک.</p></article>
+      <article><FileText/><b>صورت مسابقه یکپارچه</b><p>نمایش PDF در سایت یا بازکردن آن در صفحه جدید.</p></article>
+      <article><BarChart3/><b>کارنامه تحلیلی</b><p>امتیاز، درصد و بررسی سؤال‌به‌سؤال.</p></article>
+      <article><ShieldCheck/><b>امنیت حساب</b><p>نشست تک‌دستگاهی و بررسی ضدربات.</p></article>
+      <article><Flag/><b>دسته‌بندی علمی</b><p>تگ‌های رنگی برای گراف، ترکیبیات، الگوریتم و جبر.</p></article>
+    </div></section>
+    <section className="fj-public-cta" id="fj-about"><small>FARSI-JUDGE</small><h2>برای حل مسئله ساخته شده.</h2><p>بستری حرفه‌ای برای رقابت منصفانه و پیشرفت پیوسته.</p><button className="button primary large" onClick={onRegister}>به فارسی جاج بپیوندید <ArrowLeft/></button></section>
+    <footer className="fj-public-footer"><b>فارسی جاج</b><span>رقابت منصفانه، پیشرفت واقعی</span></footer>
+    {!cookieAccepted && <div className="fj-cookie"><ShieldCheck/><span>برای نگه‌داشتن ورود و ترجیحات از ذخیره‌سازی مرورگر استفاده می‌شود؛ رمز عبور را ذخیره نمی‌کنیم.</span><button onClick={onCookie}>می‌پذیرم</button></div>}
+  </div>
+}
+
+"""
+s = s[:insert_at] + landing + s[insert_at:]
+p.write_text(s, encoding="utf-8")
