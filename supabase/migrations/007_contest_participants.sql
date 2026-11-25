@@ -43,29 +43,36 @@ security definer
 set search_path = ''
 as $$
   select
-    coalesce(nullif(btrim(p.full_name), ''), nullif(p.username, ''), 'شرکت‌کننده'),
-    coalesce(nullif(p.username, ''), 'user'),
-    null::text,
-    er.registered_at
-  from public.exam_registrations er
-  join public.exams e on e.id = er.exam_id and e.is_published is true
-  join public.profiles p on p.id = er.user_id
-  where er.exam_id = p_exam_id
+    participant_rows.display_name,
+    participant_rows.username,
+    participant_rows.team_name,
+    participant_rows.registered_at
+  from (
+    select
+      coalesce(nullif(btrim(p.full_name), ''), nullif(p.username, ''), 'شرکت‌کننده') as display_name,
+      coalesce(nullif(p.username, ''), 'user') as username,
+      null::text as team_name,
+      er.registered_at as registered_at
+    from public.exam_registrations er
+    join public.exams e on e.id = er.exam_id and e.is_published is true
+    join public.profiles p on p.id = er.user_id
+    where er.exam_id = p_exam_id
 
-  union all
+    union all
 
-  select
-    coalesce(nullif(btrim(p.full_name), ''), nullif(p.username, ''), 'شرکت‌کننده'),
-    coalesce(nullif(p.username, ''), 'user'),
-    t.name,
-    etr.registered_at
-  from public.exam_team_registrations etr
-  join public.exams e on e.id = etr.exam_id and e.is_published is true
-  join public.teams t on t.id = etr.team_id
-  join public.team_members tm on tm.team_id = etr.team_id
-  join public.profiles p on p.id = tm.user_id
-  where etr.exam_id = p_exam_id
-  order by 4 asc, 2 asc;
+    select
+      coalesce(nullif(btrim(p.full_name), ''), nullif(p.username, ''), 'شرکت‌کننده') as display_name,
+      coalesce(nullif(p.username, ''), 'user') as username,
+      t.name as team_name,
+      etr.registered_at as registered_at
+    from public.exam_team_registrations etr
+    join public.exams e on e.id = etr.exam_id and e.is_published is true
+    join public.teams t on t.id = etr.team_id
+    join public.team_members tm on tm.team_id = etr.team_id
+    join public.profiles p on p.id = tm.user_id
+    where etr.exam_id = p_exam_id
+  ) as participant_rows
+  order by participant_rows.registered_at asc, participant_rows.username asc;
 $$;
 
 revoke all on function public.get_contest_participant_counts() from public;
