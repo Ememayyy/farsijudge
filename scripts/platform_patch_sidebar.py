@@ -260,3 +260,174 @@ css += """
 """
 css_path.write_text(css, encoding="utf-8")
 print("Added a responsive sign-out action to the profile area.")
+
+
+# Add public contest participant counts and a dedicated participant directory page.
+app_path = Path("src/App.tsx")
+app = app_path.read_text(encoding="utf-8")
+
+once_anchor = """  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length
+  return <div className="public-site">"""
+once_replacement = """  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length
+  const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({})
+  const [selectedContest, setSelectedContest] = useState<Exam | null>(null)
+  const [participants, setParticipants] = useState<{ display_name: string; username: string; team_name: string | null; registered_at: string }[]>([])
+  const [participantsLoading, setParticipantsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) return
+    let alive = true
+    const loadCounts = async () => {
+      const { data } = await supabase.rpc('get_contest_participant_counts')
+      if (!alive || !data) return
+      const next: Record<string, number> = {}
+      data.forEach((row: { exam_id: string; participant_count: number }) => {
+        next[row.exam_id] = Number(row.participant_count) || 0
+      })
+      setParticipantCounts(next)
+    }
+    void loadCounts()
+    return () => { alive = false }
+  }, [exams.length])
+
+  useEffect(() => {
+    if (!selectedContest || !supabase) return
+    let alive = true
+    setParticipantsLoading(true)
+    setParticipants([])
+    const loadParticipants = async () => {
+      const { data, error } = await supabase.rpc('get_contest_participants', { p_exam_id: selectedContest.id })
+      if (!alive) return
+      if (!error && data) setParticipants(data as { display_name: string; username: string; team_name: string | null; registered_at: string }[])
+      setParticipantsLoading(false)
+    }
+    void loadParticipants()
+    return () => { alive = false }
+  }, [selectedContest?.id])
+
+  if (selectedContest) return <div className="public-site">
+    <header className="public-header">
+      <a href="#public-top" className="public-brand" onClick={(event) => { event.preventDefault(); setSelectedContest(null) }}><span className="public-brand-mark"><BookOpen size={23} /></span><span>فارسی جاج</span><small>FARSI JUDGE</small></a>
+      <div className="public-actions">
+        <button className="icon-button" onClick={onToggleTheme} aria-label="تغییر پوسته">{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button>
+        <button className="button soft small" onClick={() => setSelectedContest(null)}><ArrowLeft size={15} />بازگشت به مسابقه‌ها</button>
+      </div>
+    </header>
+    <main className="public-main participants-page">
+      <section className="participants-hero">
+        <div className="participants-hero-copy">
+          <div className="public-kicker"><span>CONTEST PARTICIPANTS</span><i />فهرست شرکت‌کنندگان</div>
+          <h1>{selectedContest.title}</h1>
+          <p>افرادی که برای این مسابقه ثبت‌نام کرده‌اند؛ شرکت‌کنندگان تیمی نیز به‌صورت جداگانه نمایش داده می‌شوند.</p>
+          <div className="participants-hero-meta"><span><CalendarDays size={16} />{dateText(selectedContest.starts_at)}</span><span><Users size={16} />{fa(participantCounts[selectedContest.id] || 0)} شرکت‌کننده</span></div>
+        </div>
+        <div className="participants-hero-count"><Users size={25} /><strong>{fa(participantCounts[selectedContest.id] || 0)}</strong><span>REGISTERED</span></div>
+      </section>
+      <section className="public-panel participants-list-panel">
+        <div className="participants-list-heading">
+          <div><div className="public-panel-kicker">THE LINEUP</div><h2>شرکت‌کنندگان مسابقه</h2><p>فهرست بر اساس زمان ثبت‌نام مرتب شده است.</p></div>
+          <span className="public-panel-count">{fa(participants.length)} نفر</span>
+        </div>
+        {participantsLoading ? <div className="participants-loading"><span className="participants-spinner" />در حال دریافت فهرست شرکت‌کنندگان...</div>
+          : participants.length === 0 ? <div className="public-empty"><Users size={25} /><b>هنوز کسی ثبت‌نام نکرده است</b><span>به محض ثبت‌نام افراد، نام آن‌ها در این صفحه نمایش داده می‌شود.</span></div>
+          : <div className="participants-grid">{participants.map((person, index) => <article className="participant-card" key={person.username + '-' + index}>
+              <div className="participant-avatar">{(person.display_name || person.username || '?').trim().slice(0, 1)}</div>
+              <div className="participant-info"><b>{person.display_name || person.username}</b><span>@{person.username}</span></div>
+              <div className="participant-kind">{person.team_name ? <><Users size={14} />{person.team_name}</> : <><UserRound size={14} />انفرادی</>}</div>
+              <div className="participant-rank">#{fa(index + 1)}</div>
+            </article>)}</div>}
+      </section>
+      <div className="participants-footer"><ShieldCheck size={16} />اطلاعات نمایش‌داده‌شده فقط شامل نام نمایشی و نام کاربری است؛ ایمیل یا اطلاعات خصوصی منتشر نمی‌شود.</div>
+    </main>
+  </div>
+
+  return <div className="public-site">"""
+if app.count(once_anchor) != 1:
+    raise SystemExit("WelcomePage participant state anchor mismatch: " + str(app.count(once_anchor)))
+app = app.replace(once_anchor, once_replacement, 1)
+
+table_anchor = """<thead><tr><th>عنوان مسابقه</th><th>شروع</th><th>مدت</th><th>وضعیت</th><th></th></tr></thead>"""
+table_replacement = """<thead><tr><th>عنوان مسابقه</th><th>شروع</th><th>مدت</th><th>وضعیت</th><th>شرکت‌کنندگان</th><th></th></tr></thead>"""
+if app.count(table_anchor) != 1:
+    raise SystemExit("Public contest table header anchor mismatch: " + str(app.count(table_anchor)))
+app = app.replace(table_anchor, table_replacement, 1)
+
+row_anchor = """                  <td><StatusBadge status={getStatus(exam, now)} /></td>
+                  <td><button className="public-row-action" onClick={onLogin}>جزئیات <ChevronLeft size={14} /></button></td>"""
+row_replacement = """                  <td><StatusBadge status={getStatus(exam, now)} /></td>
+                  <td><button className="participant-count-link" onClick={() => setSelectedContest(exam)} aria-label={"نمایش شرکت‌کنندگان " + exam.title}><span>#</span>{fa(participantCounts[exam.id] || 0)}</button></td>
+                  <td><button className="public-row-action" onClick={onLogin}>جزئیات <ChevronLeft size={14} /></button></td>"""
+if app.count(row_anchor) != 1:
+    raise SystemExit("Public contest row anchor mismatch: " + str(app.count(row_anchor)))
+app = app.replace(row_anchor, row_replacement, 1)
+
+app_path.write_text(app, encoding="utf-8")
+
+css_path = Path("src/style.css")
+css = css_path.read_text(encoding="utf-8")
+css += """
+.participant-count-link {
+  display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(139,112,245,.28);
+  border-radius:999px; padding:7px 12px; background:rgba(139,112,245,.09); color:var(--accent);
+  font:inherit; font-size:12px; font-weight:800; cursor:pointer; transition:all .18s ease;
+}
+.participant-count-link span { font-size:15px; opacity:.8; }
+.participant-count-link:hover { transform:translateY(-2px); background:rgba(139,112,245,.16); box-shadow:0 7px 20px rgba(111,82,210,.14); }
+.participants-page { max-width:1120px; }
+.participants-hero {
+  position:relative; display:flex; align-items:center; justify-content:space-between; gap:28px;
+  overflow:hidden; margin:24px 0; padding:clamp(24px,5vw,48px); border:1px solid rgba(143,119,242,.2);
+  border-radius:26px; background:radial-gradient(circle at 85% 15%,rgba(147,115,255,.2),transparent 34%),linear-gradient(125deg,var(--panel),var(--panel-soft));
+}
+.participants-hero-copy { position:relative; z-index:1; }
+.participants-hero h1 { margin:12px 0 8px; font-size:clamp(25px,4vw,38px); letter-spacing:-.8px; }
+.participants-hero p { max-width:650px; color:var(--muted); line-height:1.9; font-size:13px; }
+.participants-hero-meta { display:flex; flex-wrap:wrap; gap:18px; margin-top:20px; color:var(--muted); font-size:12px; }
+.participants-hero-meta span { display:flex; align-items:center; gap:7px; }
+.participants-hero-count {
+  flex:0 0 150px; width:150px; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; border:1px solid rgba(150,124,255,.28); border-radius:36px;
+  background:linear-gradient(145deg,rgba(150,124,255,.2),rgba(150,124,255,.04)); color:var(--accent);
+  box-shadow:0 18px 45px rgba(90,65,180,.12);
+}
+.participants-hero-count strong { font-size:40px; line-height:1.15; }
+.participants-hero-count span { font-size:9px; font-weight:900; letter-spacing:2px; opacity:.7; }
+.participants-list-panel { padding:clamp(18px,3vw,30px); }
+.participants-list-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px; }
+.participants-list-heading h2 { margin:6px 0; font-size:20px; }
+.participants-list-heading p { color:var(--muted); font-size:12px; }
+.participants-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.participant-card {
+  display:flex; align-items:center; gap:12px; min-width:0; padding:13px; border:1px solid var(--line);
+  border-radius:15px; background:var(--panel); transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.participant-card:hover { transform:translateY(-2px); border-color:rgba(143,119,242,.4); box-shadow:0 9px 24px rgba(20,15,50,.07); }
+.participant-avatar { flex:0 0 42px; width:42px; height:42px; display:grid; place-items:center; border-radius:13px; color:white; font-size:17px; font-weight:900; background:linear-gradient(145deg,#9275f5,#5b4ab2); }
+.participant-info { display:flex; flex-direction:column; gap:4px; min-width:0; flex:1; }
+.participant-info b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.participant-info span { color:var(--muted); font-size:11px; direction:ltr; text-align:right; }
+.participant-kind { display:flex; align-items:center; gap:5px; color:var(--muted); font-size:10px; white-space:nowrap; }
+.participant-rank { color:var(--muted); font-size:11px; font-weight:800; direction:ltr; }
+.participants-loading { display:flex; align-items:center; justify-content:center; gap:12px; padding:50px 10px; color:var(--muted); font-size:13px; }
+.participants-spinner { width:18px; height:18px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:participant-spin .8s linear infinite; }
+@keyframes participant-spin { to { transform:rotate(360deg); } }
+.participants-footer { display:flex; align-items:center; gap:8px; margin:14px 4px; color:var(--muted); font-size:11px; }
+@media(max-width:700px) {
+  .participants-hero { align-items:flex-start; padding:22px; }
+  .participants-hero-count { flex-basis:92px; width:92px; height:92px; border-radius:24px; }
+  .participants-hero-count strong { font-size:27px; }
+  .participants-hero-count span { font-size:7px; letter-spacing:1px; }
+  .participants-grid { grid-template-columns:1fr; }
+  .participant-card { gap:9px; padding:10px; }
+  .participant-kind { max-width:90px; overflow:hidden; text-overflow:ellipsis; }
+}
+@media(max-width:430px) {
+  .participants-hero { flex-direction:column-reverse; }
+  .participants-hero-count { flex-direction:row; width:auto; height:auto; padding:8px 13px; gap:7px; }
+  .participants-hero-count strong { font-size:21px; }
+  .participants-hero-count span { display:none; }
+  .participants-footer { align-items:flex-start; line-height:1.8; }
+}
+"""
+css_path.write_text(css, encoding="utf-8")
+print("Added participant counts and participant directory UI.")
