@@ -227,12 +227,12 @@ replace_once(
 )
 replace_once(
 "    if (!answerDirty || !selectedExam || page !== 'exam' || selectedStatus !== 'active') return",
-"    if (!selectedExam || page !== 'exam' || selectedStatus !== 'active' || Object.keys(pendingAnswerChanges).length === 0) return",
+"    if (!answerDirty || !selectedExam || page !== 'exam' || selectedStatus !== 'active' || Object.keys(pendingAnswerChanges).length === 0) return",
 "autosave only dirty questions"
 )
 replace_once(
 "  }, [answerValues, answerDirty, selectedExam?.id, page, isDemo, session?.user.id])",
-"  }, [pendingAnswerChanges, selectedExam?.id, page, selectedStatus, isDemo, session?.user.id])",
+"  }, [pendingAnswerChanges, answerDirty, selectedExam?.id, page, selectedStatus, isDemo, session?.user.id])",
 "autosave pending answer dependencies"
 )
 replace_once(
@@ -274,7 +274,6 @@ replace_once(
         })
       }
       setSaving(false)
-      setAnswerDirty(false)
 """,
 "clear only successfully saved team changes"
 )
