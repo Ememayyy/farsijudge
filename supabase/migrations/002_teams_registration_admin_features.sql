@@ -268,6 +268,9 @@ begin
   end if;
 
   if p_team_id is null then
+    if exists (select 1 from public.team_members where user_id = v_uid) then
+      raise exception 'شما عضو تیم هستید؛ ثبت‌نام این آزمون باید از طریق کاپیتان تیم انجام شود.';
+    end if;
     if exists (
       select 1 from public.exam_team_registrations etr
       join public.team_members tm on tm.team_id = etr.team_id
@@ -698,15 +701,4 @@ using (
     )
   )
 );
-
--- Automatically register existing users for exams that are already running, avoiding an abrupt lockout.
-insert into public.exam_registrations(exam_id, user_id)
-select e.id, p.id
-from public.exams e
-cross join public.profiles p
-where e.is_published
-  and pg_catalog.now() >= e.starts_at
-  and pg_catalog.now() < e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
-on conflict do nothing;
-
 commit;
