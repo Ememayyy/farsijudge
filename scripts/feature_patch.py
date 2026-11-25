@@ -98,8 +98,8 @@ replace_once(
 
 replace_once(
 """      const [qRes, aRes] = await Promise.all([
-        supabase.from('exam_questions').select('id,exam_id,question_number,points').eq('exam_id', selectedExam.id).order('question_number'),
-        supabase.from('exam_answers').select('question_number,answer').eq('exam_id', selectedExam.id).eq('user_id', session.user.id),
+        client.from('exam_questions').select('id,exam_id,question_number,points').eq('exam_id', selectedExam.id).order('question_number'),
+        client.from('exam_answers').select('question_number,answer').eq('exam_id', selectedExam.id).eq('user_id', session.user.id),
       ])
 """,
 """      const teamRegistrationResponse = team
