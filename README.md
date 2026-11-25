@@ -17,6 +17,14 @@ https://ememayyy.github.io/farsijudge/
 
 راهنمای کامل‌تر: [تنظیم URL و ایمیل Supabase](supabase/auth-url-settings.md).
 
+## قابلیت‌های تیمی و مدیریت پیشرفته
+
+پس از انتشار این نسخه، فایل زیر را **یک‌بار** در Supabase → SQL Editor اجرا کنید:
+
+- [supabase/migrations/002_teams_registration_admin_features.sql](supabase/migrations/002_teams_registration_admin_features.sql)
+
+این migration ستون نام کاربری، تیم‌ها، دعوت‌نامه‌ها، ثبت‌نام فردی/تیمی، پاسخ‌های مشترک، لینک یا فایل خصوصی PDF و RPCهای امن مدیریت و تصحیح مجدد را اضافه می‌کند. بدون اجرای migration، رابط جدید به جداول و توابعی اشاره می‌کند که هنوز در دیتابیس وجود ندارند.
+
 ## مدیر کردن حساب مالک
 
 بعد از ثبت‌نام با ایمیل موردنظر، فایل [supabase/promote-admin.sql](supabase/promote-admin.sql) را در Supabase → SQL Editor اجرا کن. این فایل برای ایمیلی که مالک پروژه در گفتگو داده از پیش تنظیم شده است و در پایان نقش و وضعیت تأیید ایمیل را نمایش می‌دهد. پس از اجرای موفق، از سایت خارج شو و دوباره وارد شو تا منوی مدیریت نمایش داده شود.
