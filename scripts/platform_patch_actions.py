@@ -5,6 +5,17 @@ def once(a,b):
  global s
  if s.count(a)!=1: raise SystemExit("Patch anchor mismatch: "+a[:70])
  s=s.replace(a,b,1)
+once("  const changeUserRole = async (userId: string, role: 'participant' | 'admin') => {","""  const deleteUser = async (userId: string) => {
+    if (!supabase || !window.confirm('حساب این کاربر و داده‌های وابسته حذف شود؟ این کار برگشت‌پذیر نیست.')) return
+    const { error } = await supabase.rpc('admin_delete_user', { p_user_id: userId })
+    if (error) notify('حذف کاربر ناموفق بود: '+error.message,'error')
+    else { notify('کاربر حذف شد.','success'); await loadMainData(); const {data}=await supabase.from('profiles').select('id,full_name,role,username'); if(data)setProfiles(data as Profile[]) }
+  }
+  const changeUserRole = async (userId: string, role: 'participant' | 'admin') => {""")
+once("onSetRole={changeUserRole} editingExamId={editingExamId}","onSetRole={changeUserRole} onDeleteUser={deleteUser} editingExamId={editingExamId}")
+once("onSetRole, editingExamId, questionPdfUrl","onSetRole, onDeleteUser, editingExamId, questionPdfUrl")
+once("onSetRole: (userId: string, role: 'participant' | 'admin') => void; editingExamId","onSetRole: (userId: string, role: 'participant' | 'admin') => void; onDeleteUser: (userId: string) => void; editingExamId")
+once("onSetRole(p.id, 'admin')}>ارتقای مدیر</button>}</div>)}</div>","onSetRole(p.id, 'admin')}>ارتقای مدیر</button>}<button className='button soft small danger-text' onClick={() => onDeleteUser(p.id)}>حذف کاربر</button></div>)}</div>")
 once("  const createTeam = async (event: FormEvent) => {","""  const leaveTeam = async () => {
     if (!supabase || !window.confirm('از تیم فعلی خارج می‌شوید؟')) return
     const { error } = await supabase.rpc('leave_team')
