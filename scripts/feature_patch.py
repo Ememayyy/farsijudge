@@ -278,6 +278,35 @@ replace_once(
 """,
 "clear only successfully saved team changes"
 )
+
+replace_once(
+"""  useEffect(() => {
+    if (!isAdmin || !supabase || !session?.user.id || page !== 'admin') return
+""",
+"""  useEffect(() => {
+    if (!supabase || !team?.id || !selectedExam || page !== 'exam' || selectedStatus !== 'active' || !myTeamRegistrations.includes(selectedExam.id)) return
+    let alive = true
+    const refreshSharedAnswers = async () => {
+      const { data } = await supabase.from('exam_answers').select('question_number,answer')
+        .eq('exam_id', selectedExam.id).eq('team_id', team.id)
+      if (!alive || !data) return
+      setAnswerValues(() => {
+        const next: Record<number, string> = {}
+        for (const row of data) next[row.question_number] = String(row.answer)
+        for (const [question, raw] of Object.entries(pendingAnswerChanges)) next[Number(question)] = raw
+        return next
+      })
+    }
+    void refreshSharedAnswers()
+    const timer = window.setInterval(() => { void refreshSharedAnswers() }, 2500)
+    return () => { alive = false; window.clearInterval(timer) }
+  }, [selectedExam?.id, team?.id, page, selectedStatus, myTeamRegistrations, pendingAnswerChanges])
+
+  useEffect(() => {
+    if (!isAdmin || !supabase || !session?.user.id || page !== 'admin') return
+""",
+"live shared team answer refresh"
+)
 replace_once(
 """      const [r, p] = await Promise.all([
         client.from('exam_results').select('*').order('graded_at', { ascending: false }).limit(100),
