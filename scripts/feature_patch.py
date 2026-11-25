@@ -43,6 +43,7 @@ replace_once(
 "  const [profiles, setProfiles] = useState<Profile[]>([])\n",
 """  const [profiles, setProfiles] = useState<Profile[]>([])
   const [authUsername, setAuthUsername] = useState('')
+  const [usernameDraft, setUsernameDraft] = useState('')
   const [team, setTeam] = useState<Team | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [teamInvitations, setTeamInvitations] = useState<TeamInvitation[]>([])
@@ -65,7 +66,10 @@ replace_once(
       supabase.from('profiles').select('id,full_name,role').eq('id', session.user.id).single(),
       supabase.from('exams').select('id,title,description,starts_at,duration_minutes,is_published,created_at').order('starts_at', { ascending: false }),
     ])
-    if (profileResponse.data) setProfile(profileResponse.data as Profile)
+    if (profileResponse.data) {
+      setProfile(profileResponse.data as Profile)
+      setUsernameDraft(profileResponse.data.username || '')
+    }
 """,
 """    const [profileResponse, examResponse, membershipResponse, invitationResponse, ownRegistrationResponse, teamRegistrationResponse] = await Promise.all([
       supabase.from('profiles').select('id,full_name,role,username').eq('id', session.user.id).single(),
@@ -360,7 +364,19 @@ replace_once(
 
 needle = """  const enterDemo = () => {
 """
-insert = """  const createTeam = async (event: FormEvent) => {
+insert = """  const saveUsername = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!supabase) return
+    if (!/^[a-zA-Z0-9_]{3,24}$/.test(usernameDraft)) return notify('نام کاربری باید ۳ تا ۲۴ حرف انگلیسی، عدد یا زیرخط باشد.', 'error')
+    const { error } = await supabase.rpc('set_my_username', { p_username: usernameDraft.trim() })
+    if (error) notify('تغییر نام کاربری ناموفق بود: ' + error.message, 'error')
+    else {
+      notify('نام کاربری ذخیره شد.', 'success')
+      await loadMainData()
+    }
+  }
+
+  const createTeam = async (event: FormEvent) => {
     event.preventDefault()
     if (!supabase || !teamName.trim()) return
     setTeamBusy(true)
@@ -624,6 +640,7 @@ replace_once(
         />}
         {page === 'team' && <TeamPage team={team} members={teamMembers} invitations={teamInvitations}
           teamName={teamName} inviteIdentifier={inviteIdentifier} busy={teamBusy}
+          usernameDraft={usernameDraft} onUsernameDraft={setUsernameDraft} onSaveUsername={saveUsername}
           onTeamName={setTeamName} onInviteIdentifier={setInviteIdentifier}
           onCreate={createTeam} onInvite={inviteToTeam} onRespond={respondToInvitation} />}
         {page === 'profile' && <ProfilePage profile={profile} email={session?.user.email || (isDemo ? demoUser.email : '')} exams={exams} />}
@@ -757,15 +774,24 @@ replace_once(
 )
 
 insert_at = source.index("function ProfilePage(")
-team_component = """function TeamPage({ team, members, invitations, teamName, inviteIdentifier, busy, onTeamName, onInviteIdentifier, onCreate, onInvite, onRespond }: {
+team_component = """function TeamPage({ team, members, invitations, teamName, inviteIdentifier, busy, usernameDraft, onUsernameDraft, onSaveUsername, onTeamName, onInviteIdentifier, onCreate, onInvite, onRespond }: {
   team: Team | null; members: TeamMember[]; invitations: TeamInvitation[]
-  teamName: string; inviteIdentifier: string; busy: boolean
+  teamName: string; inviteIdentifier: string; busy: boolean; usernameDraft: string
+  onUsernameDraft: (v: string) => void; onSaveUsername: (e: FormEvent) => void
   onTeamName: (v: string) => void; onInviteIdentifier: (v: string) => void
   onCreate: (e: FormEvent) => void; onInvite: (e: FormEvent) => void
   onRespond: (id: string, accept: boolean) => void
 }) {
   return <>
     <div className="page-title-row"><div><div className="eyebrow">همکاری گروهی</div><h1>تیم و دعوت‌ها</h1><p>یک تیم چهار نفره بسازید یا دعوت‌نامه عضویت را بپذیرید.</p></div><div className="admin-mark"><Users size={24} /></div></div>
+    <section className="panel-card team-panel username-panel">
+      <div className="panel-title"><div><h2>نام کاربری شما</h2><p>دیگران می‌توانند با این نام کاربری شما را به تیم دعوت کنند.</p></div></div>
+      <form className="team-invite-form" onSubmit={onSaveUsername}>
+        <label className="field-label">نام کاربری<input value={usernameDraft} onChange={(e) => onUsernameDraft(e.target.value)} placeholder="مثلاً EMEMAY" dir="ltr" /></label>
+        <button className="button soft" type="submit">ذخیره نام کاربری</button>
+      </form>
+      <small className="muted">۳ تا ۲۴ نویسه انگلیسی، عدد یا زیرخط؛ نام کاربری باید یکتا باشد.</small>
+    </section>
     {team ? <section className="panel-card team-panel">
       <div className="panel-title"><div><h2>{team.name}</h2><p>{team.role === 'captain' ? 'شما کاپیتان تیم هستید.' : 'عضو تیم هستید؛ ثبت‌نام آزمون تیمی با کاپیتان است.'}</p></div><span className="private-chip">{fa(members.length)} از ۴ عضو</span></div>
       <div className="team-member-list">{members.map((member) => <div className="team-member-row" key={member.user_id}><div className="avatar tiny">{member.full_name.slice(0, 1)}</div><div className="admin-exam-copy"><b>{member.full_name}</b><small dir="ltr">@{member.username || '—'}</small></div><span className="role-pill">{member.role === 'captain' ? 'کاپیتان' : 'عضو'}</span></div>)}</div>
