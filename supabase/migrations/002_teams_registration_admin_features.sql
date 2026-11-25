@@ -243,6 +243,15 @@ begin
     if exists (select 1 from public.team_members where user_id = (select auth.uid())) then
       raise exception 'ابتدا باید از تیم فعلی خارج شوید.';
     end if;
+    if exists (
+      select 1
+      from public.exam_registrations er
+      join public.exams e on e.id = er.exam_id
+      where er.user_id = (select auth.uid())
+        and pg_catalog.now() < e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
+    ) then
+      raise exception 'پس از ثبت‌نام انفرادی برای آزمون پیش‌رو، تا پایان آن آزمون نمی‌توانید به تیم ملحق شوید.';
+    end if;
     select count(*) into v_member_count from public.team_members where team_id = v_team_id;
     if v_member_count >= 4 then raise exception 'ظرفیت تیم تکمیل شده است.'; end if;
     insert into public.team_members(team_id, user_id, role)
@@ -289,6 +298,7 @@ begin
       select 1 from public.team_members tm
       where tm.team_id = p_team_id and tm.user_id = v_uid and tm.role = 'captain'
     ) then raise exception 'ثبت‌نام تیمی فقط توسط کاپیتان امکان‌پذیر است.'; end if;
+    perform 1 from public.teams where id = p_team_id for update;
     if exists (
       select 1 from public.exam_registrations er
       join public.team_members tm on tm.user_id = er.user_id
