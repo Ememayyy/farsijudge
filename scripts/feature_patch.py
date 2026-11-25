@@ -14,7 +14,7 @@ replace_once(
 """  LayoutDashboard, LogOut, Moon, Plus, RefreshCw, ShieldCheck,
   Sun, UserRound, Users, XCircle,
 """,
-"""  GraduationCap, LayoutDashboard, LogOut, Moon, Plus, RefreshCw, ShieldCheck,
+"""  LayoutDashboard, LogOut, Moon, Plus, RefreshCw, ShieldCheck,
   Sun, UserRound, Users, XCircle, UserPlus, Pencil, Trash2, FileUp, ExternalLink,
 """,
 "icons"
