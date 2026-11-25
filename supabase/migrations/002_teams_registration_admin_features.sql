@@ -647,6 +647,48 @@ $$;
 revoke all on function public.set_exam_question_resource(uuid, text, text) from public, anon;
 grant execute on function public.set_exam_question_resource(uuid, text, text) to authenticated;
 
+-- Expose the question PDF only to registered examinees during the live exam window.
+-- Admins can inspect it at any time. The URL/path columns themselves are not directly selectable.
+create or replace function public.get_exam_question_resource(p_exam_id uuid)
+returns table(question_pdf_url text, question_file_path text)
+language plpgsql stable security definer set search_path = ''
+as $
+declare v_uid uuid := (select auth.uid());
+begin
+  if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
+  if not (select public.is_admin()) then
+    if not exists (
+      select 1 from public.exams e
+      where e.id = p_exam_id
+        and pg_catalog.now() >= e.starts_at
+        and pg_catalog.now() < e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
+    ) then
+      raise exception 'فایل سؤال فقط در زمان برگزاری آزمون قابل مشاهده است.';
+    end if;
+    if not exists (
+      select 1 from public.exam_registrations er
+      where er.exam_id = p_exam_id and er.user_id = v_uid
+    ) and not exists (
+      select 1
+      from public.exam_team_registrations etr
+      join public.team_members tm on tm.team_id = etr.team_id
+      where etr.exam_id = p_exam_id and tm.user_id = v_uid
+    ) then
+      raise exception 'برای مشاهده صورت سؤال باید پیش از شروع آزمون ثبت‌نام کرده باشید.';
+    end if;
+  end if;
+
+  return query
+    select e.question_pdf_url, e.question_file_path
+    from public.exams e
+    where e.id = p_exam_id;
+end;
+$;
+revoke all on function public.get_exam_question_resource(uuid) from public, anon;
+grant execute on function public.get_exam_question_resource(uuid) to authenticated;
+
+revoke select (question_pdf_url, question_file_path) on public.exams from anon, authenticated;
+
 create or replace function public.admin_set_profile_role(p_user_id uuid, p_role text)
 returns void
 language plpgsql security definer set search_path = ''
@@ -688,16 +730,26 @@ using (
   bucket_id = 'exam-question-files'
   and (
     (select public.is_admin())
-    or exists (
-      select 1 from public.exam_registrations er
-      where er.exam_id::text = split_part(storage.objects.name, '/', 1)
-        and er.user_id = (select auth.uid())
-    )
-    or exists (
-      select 1 from public.exam_team_registrations etr
-      join public.team_members tm on tm.team_id = etr.team_id
-      where etr.exam_id::text = split_part(storage.objects.name, '/', 1)
-        and tm.user_id = (select auth.uid())
+    or (
+      exists (
+        select 1 from public.exams e
+        where e.id::text = split_part(storage.objects.name, '/', 1)
+          and pg_catalog.now() >= e.starts_at
+          and pg_catalog.now() < e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
+      )
+      and (
+        exists (
+          select 1 from public.exam_registrations er
+          where er.exam_id::text = split_part(storage.objects.name, '/', 1)
+            and er.user_id = (select auth.uid())
+        )
+        or exists (
+          select 1 from public.exam_team_registrations etr
+          join public.team_members tm on tm.team_id = etr.team_id
+          where etr.exam_id::text = split_part(storage.objects.name, '/', 1)
+            and tm.user_id = (select auth.uid())
+        )
+      )
     )
   )
 );
