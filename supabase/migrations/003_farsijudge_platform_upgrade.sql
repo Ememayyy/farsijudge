@@ -774,7 +774,7 @@ $$;
 create or replace function public.enforce_team_invitation_limit()
 returns trigger
 language plpgsql security definer set search_path = ''
-as $
+as $$
 declare v_members integer; v_pending integer;
 begin
   if new.status <> 'pending' then return new; end if;
@@ -787,7 +787,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 drop trigger if exists team_invitation_limit on public.team_invitations;
 create trigger team_invitation_limit
 before insert or update of status on public.team_invitations
