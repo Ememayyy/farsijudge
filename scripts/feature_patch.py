@@ -321,7 +321,7 @@ replace_once(
 """,
 """      const [r, p] = await Promise.all([
         client.from('exam_results').select('*').order('graded_at', { ascending: false }).limit(100),
-        client.from('profiles').select('id,full_name,role,username').order('created_at', { ascending: false }),
+        client.from('profiles').select('id,full_name,role,username'),
       ])
 """,
 "admin lists"
@@ -511,6 +511,7 @@ source = source[:start] + """  const createExam = async (event: FormEvent) => {
     setAdminBusy(true)
     let examId = editingExamId
     let filePath = questionFilePath
+    if (questionPdfUrl.trim() && !questionFile) filePath = null
     let failed = false
 
     if (editingExamId) {
