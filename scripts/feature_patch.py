@@ -27,6 +27,12 @@ type TeamMember = { user_id: string; role: 'captain' | 'member'; full_name: stri
 type TeamInvitation = { id: string; team_id: string; invited_by: string; created_at: string; teams?: { name: string } | null }""",
 "profile types"
 )
+
+replace_once(
+"type ExamResult = {\\n  id: string",
+"type ExamResult = {\\n  team_id?: string | null\\n  id: string",
+"team result type"
+)
 replace_once(
 "  is_published: boolean\n  created_at?: string\n",
 "  is_published: boolean\n  question_pdf_url?: string | null\n  question_file_path?: string | null\n  created_at?: string\n",
@@ -454,9 +460,9 @@ replace_once(
 "team nav"
 )
 replace_once(
-"""        <div className="breadcrumb"><span className="topbar-brand"><span className="brand-mark"><img src={brandLogo} alt="" /></span><span>آزمون‌یار</span></span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b></div>
+"""        <div className="breadcrumb"><span className="topbar-brand"><span className="brand-mark"><img src={brandLogo} alt="" /></span><span>آزمون‌یار</span></span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : 'پیمایش'}</b></div>
 """,
-"""        <div className="breadcrumb"><span>آزمون‌یار</span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b></div>
+"""        <div className="breadcrumb"><span className="topbar-brand"><span className="brand-mark"><img src={brandLogo} alt="" /></span><span>آزمون‌یار</span></span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b></div>
 """,
 "team breadcrumb"
 )
