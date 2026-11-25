@@ -1,0 +1,67 @@
+from pathlib import Path
+p=Path('src/App.tsx')
+s=p.read_text(encoding='utf-8')
+
+def rep(old,new,label):
+    global s
+    n=s.count(old)
+    if n!=1:
+        raise RuntimeError(f'{label}: expected exactly one match, found {n}')
+    s=s.replace(old,new,1)
+
+# Core model and corrected end-time handling.
+rep("  is_published: boolean\n  question_pdf_url?: string | null\n", "  is_published: boolean\n  tags?: string[]\n  results_release_at?: string | null\n  allow_late_registration?: boolean\n  registration_closes_at?: string | null\n  end_at_override?: string | null\n  announcement?: string | null\n  question_pdf_url?: string | null\n", "contest model")
+rep("const examEnd = (exam: Exam) => new Date(new Date(exam.starts_at).getTime() + exam.duration_minutes * 60_000)", "const examEnd = (exam: Exam) => new Date(exam.end_at_override || (new Date(exam.starts_at).getTime() + exam.duration_minutes * 60_000))", "effective end time")
+rep("  ArrowLeft, Award, BookOpen, CheckCircle2, ChevronLeft, Clock3,\n  LayoutDashboard, LogOut, Moon, Plus, RefreshCw, ShieldCheck,\n  Sun, UserRound, Users, XCircle, UserPlus, Pencil, Trash2, FileUp, ExternalLink,\n", "  ArrowLeft, Award, BookOpen, CheckCircle2, ChevronLeft, Clock3,\n  LayoutDashboard, LogOut, Moon, Plus, RefreshCw, ShieldCheck,\n  Sun, UserRound, Users, XCircle, UserPlus, Pencil, Trash2, FileUp, ExternalLink, Menu,\n", "menu icon")
+
+# Router, welcome visibility, mobile navigation and session activation.
+rep("  const [page, setPage] = useState<Page>('dashboard')", "  const [page, setPageState] = useState<Page>(() => {\n    const value = window.location.hash.replace(/^#\\/?/, '').split('/')[0]\n    return (['dashboard', 'exam', 'admin', 'profile', 'team', 'register'].includes(value) ? value : 'dashboard') as Page\n  })\n  const [showWelcome, setShowWelcome] = useState(() => !window.location.hash.startsWith('#/auth/'))\n  const [mobileNavOpen, setMobileNavOpen] = useState(false)\n  const [sessionReady, setSessionReady] = useState(false)", "router and page state")
+rep("  const [authUsername, setAuthUsername] = useState('')", "  const [authUsername, setAuthUsername] = useState('')\n  const [registrationExam, setRegistrationExam] = useState<Exam | null>(null)", "registration state")
+rep("  const isLoggedIn = Boolean(userId)\n  const selectedStatus", "  const isLoggedIn = Boolean(userId)\n  const selectedStatus", "logged in marker")
+# Place route-aware navigation helpers after derived auth flags.
+rep("  const selectedStatus = selectedExam ? getStatus(selectedExam, now) : null\n", """  const selectedStatus = selectedExam ? getStatus(selectedExam, now) : null
+  const setPage = (next: Page) => {
+    setPageState(next)
+    setMobileNavOpen(false)
+    const nextHash = '#/' + next
+    if (window.location.hash !== nextHash) window.history.pushState({ page: next }, '', nextHash)
+  }
+  const openAuth = (mode: 'login' | 'register') => {
+    setAuthMode(mode)
+    setShowWelcome(false)
+    setMobileNavOpen(false)
+    window.history.pushState({ authMode: mode }, '', '#/auth/' + mode)
+  }
+  const returnToWelcome = () => {
+    setShowWelcome(true)
+    window.history.pushState({ page: 'welcome' }, '', '#/welcome')
+  }
+""", "navigation helpers")
+rep("  useEffect(() => {\n    document.documentElement.dataset.theme = theme", """  useEffect(() => {
+    const syncRoute = () => {
+      const hash = window.location.hash
+      if (hash === '#/auth/login' || hash === '#/auth/register') {
+        setShowWelcome(false)
+        setAuthMode(hash.endsWith('register') ? 'register' : 'login')
+        return
+      }
+      if (hash === '#/welcome' || (!hash && !isLoggedIn)) setShowWelcome(true)
+      const value = hash.replace(/^#\\/?/, '').split('/')[0]
+      const valid = ['dashboard', 'admin', 'profile', 'team', 'exam', 'register']
+      const next = (valid.includes(value) ? value : 'dashboard') as Page
+      if ((next === 'exam' || next === 'register') && !selectedExam) setPageState('dashboard')
+      else setPageState(next)
+    }
+    if (!window.location.hash) window.history.replaceState({ page: 'dashboard' }, '', '#/dashboard')
+    window.addEventListener('popstate', syncRoute)
+    window.addEventListener('hashchange', syncRoute)
+    return () => {
+      window.removeEventListener('popstate', syncRoute)
+      window.removeEventListener('hashchange', syncRoute)
+    }
+  }, [selectedExam?.id, isLoggedIn])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme""", "route popstate synchronization")
+
+# En
