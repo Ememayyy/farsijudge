@@ -768,4 +768,30 @@ exception
 end;
 $$;
 
+
+
+-- Pending invites count toward the three-person team capacity as well.
+create or replace function public.enforce_team_invitation_limit()
+returns trigger
+language plpgsql security definer set search_path = ''
+as $
+declare v_members integer; v_pending integer;
+begin
+  if new.status <> 'pending' then return new; end if;
+  perform 1 from public.teams where id = new.team_id for update;
+  select count(*) into v_members from public.team_members where team_id = new.team_id;
+  select count(*) into v_pending from public.team_invitations
+    where team_id = new.team_id and status = 'pending' and id is distinct from new.id;
+  if v_members + v_pending >= 3 then
+    raise exception 'ظرفیت تیم تکمیل است؛ هر تیم حداکثر سه نفر با احتساب کاپیتان دارد.';
+  end if;
+  return new;
+end;
+$;
+drop trigger if exists team_invitation_limit on public.team_invitations;
+create trigger team_invitation_limit
+before insert or update of status on public.team_invitations
+for each row execute function public.enforce_team_invitation_limit();
+
+
 commit;
