@@ -85,13 +85,14 @@ once(
     document.documentElement.dataset.theme = theme
 """,
 """  useEffect(() => {
-    if (!selectedExam || page !== 'exam' || selectedStatus !== 'ended' || isDemo || !supabase || !session?.user.id || examResult) return
+    const client = supabase
+    if (!selectedExam || page !== 'exam' || selectedStatus !== 'ended' || isDemo || !client || !session?.user.id || examResult) return
     let alive = true
     const refreshPublishedResult = async () => {
       const useTeam = Boolean(team && myTeamRegistrations.includes(selectedExam.id))
       const response = useTeam
-        ? await supabase.from('exam_results').select('*').eq('exam_id', selectedExam.id).eq('team_id', team!.id).maybeSingle()
-        : await supabase.from('exam_results').select('*').eq('exam_id', selectedExam.id).eq('user_id', session.user.id).is('team_id', null).maybeSingle()
+        ? await client.from('exam_results').select('*').eq('exam_id', selectedExam.id).eq('team_id', team!.id).maybeSingle()
+        : await client.from('exam_results').select('*').eq('exam_id', selectedExam.id).eq('user_id', session.user.id).is('team_id', null).maybeSingle()
       if (alive && response.data) setExamResult(response.data as ExamResult)
     }
     void refreshPublishedResult()
@@ -270,7 +271,7 @@ welcome_and_registration = """function WelcomePage({ theme, onToggleTheme, onLog
 }) {
   return <div className="welcome-shell">
     <header className="welcome-header">
-      <div className="welcome-brand"><span className="brand-mark"><GraduationCap size={25} /></span><b>فارسی جاج</b></div>
+      <div className="welcome-brand"><span className="brand-mark"><BookOpen size={25} /></span><b>فارسی جاج</b></div>
       <div className="welcome-header-actions">
         <button className="icon-button" onClick={onToggleTheme} aria-label="تغییر تم">{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button>
         <button className="button soft small" onClick={onLogin}>ورود</button>
@@ -293,7 +294,7 @@ welcome_and_registration = """function WelcomePage({ theme, onToggleTheme, onLog
           <div className="welcome-orbit orbit-one" /><div className="welcome-orbit orbit-two" />
           <div className="welcome-score-card">
             <div className="welcome-score-top"><span className="welcome-live-dot" />محیط مسابقه</div>
-            <div className="welcome-score-icon"><GraduationCap size={34} /></div>
+            <div className="welcome-score-icon"><BookOpen size={34} /></div>
             <b>تمرکز روی حل مسئله</b>
             <span>از ثبت‌نام تا مشاهدهٔ کارنامه</span>
             <div className="welcome-mini-stats"><div><Clock3 size={16} /><b>زمان‌بندی‌شده</b></div><div><ShieldCheck size={16} /><b>نتیجهٔ دقیق</b></div></div>
