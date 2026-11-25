@@ -745,6 +745,87 @@ $$;
 revoke all on function public.admin_set_profile_role(uuid, text) from public, anon;
 grant execute on function public.admin_set_profile_role(uuid, text) to authenticated;
 
+create or replace function public.set_my_username(p_username text)
+returns void
+language plpgsql security definer set search_path = ''
+as $
+declare v_uid uuid := (select auth.uid());
+begin
+  if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
+  if p_username is null or p_username !~ '^[a-zA-Z0-9_]{3,24}-- Private bucket for uploaded question PDFs. Registered examinees and admins can read.
+insert into storage.buckets(id, name, public)
+values ('exam-question-files', 'exam-question-files', false)
+on conflict (id) do nothing;
+
+drop policy if exists "question_files_admin_upload" on storage.objects;
+create policy "question_files_admin_upload" on storage.objects for insert to authenticated
+with check (bucket_id = 'exam-question-files' and (select public.is_admin()));
+
+drop policy if exists "question_files_admin_update" on storage.objects;
+create policy "question_files_admin_update" on storage.objects for update to authenticated
+using (bucket_id = 'exam-question-files' and (select public.is_admin()))
+with check (bucket_id = 'exam-question-files' and (select public.is_admin()));
+
+drop policy if exists "question_files_admin_delete" on storage.objects;
+create policy "question_files_admin_delete" on storage.objects for delete to authenticated
+using (bucket_id = 'exam-question-files' and (select public.is_admin()));
+
+drop policy if exists "question_files_registered_read" on storage.objects;
+create policy "question_files_registered_read" on storage.objects for select to authenticated
+using (
+  bucket_id = 'exam-question-files'
+  and (
+    (select public.is_admin())
+    or (
+      exists (
+        select 1 from public.exams e
+        where e.id::text = split_part(storage.objects.name, '/', 1)
+          and pg_catalog.now() >= e.starts_at
+          and pg_catalog.now() < e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
+      )
+      and (
+        exists (
+          select 1 from public.exam_registrations er
+          where er.exam_id::text = split_part(storage.objects.name, '/', 1)
+            and er.user_id = (select auth.uid())
+        )
+        or exists (
+          select 1 from public.exam_team_registrations etr
+          join public.team_members tm on tm.team_id = etr.team_id
+          where etr.exam_id::text = split_part(storage.objects.name, '/', 1)
+            and tm.user_id = (select auth.uid())
+        )
+      )
+    )
+  )
+);
+
+-- Preserve only people who had already opened an in-progress legacy exam before this migration.
+-- New participants still have to register before starts_at through register_for_exam().
+insert into public.exam_registrations(exam_id, user_id)
+select a.exam_id, a.user_id
+from public.exam_attempts a
+join public.exams e on e.id = a.exam_id
+where a.team_id is null
+  and e.is_published
+  and pg_catalog.now() >= e.starts_at
+  and pg_catalog.now() < e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes)
+on conflict do nothing;
+
+commit;
+ then
+    raise exception 'نام کاربری باید ۳ تا ۲۴ حرف انگلیسی، عدد یا زیرخط باشد.';
+  end if;
+  update public.profiles set username = p_username where id = v_uid;
+  if not found then raise exception 'پروفایل کاربر پیدا نشد.'; end if;
+exception
+  when unique_violation then
+    raise exception 'این نام کاربری قبلاً انتخاب شده است.';
+end;
+$;
+revoke all on function public.set_my_username(text) from public, anon;
+grant execute on function public.set_my_username(text) to authenticated;
+
 -- Private bucket for uploaded question PDFs. Registered examinees and admins can read.
 insert into storage.buckets(id, name, public)
 values ('exam-question-files', 'exam-question-files', false)
