@@ -58,16 +58,6 @@ jobs:
           cp supabase/migrations/003_farsijudge_platform_upgrade.sql farsijudge/supabase/migrations/003_farsijudge_platform_upgrade.sql
           cp supabase/email-templates/confirm-signup.html farsijudge/supabase/email-templates/confirm-signup.html
 
-      - name: Capture patched application source for verification
-        uses: actions/upload-artifact@v4
-        with:
-          name: patched-app-source-${{ github.run_number }}
-          path: |
-            farsijudge/src/App.tsx
-            farsijudge/src/style.css
-            farsijudge/package.json
-          if-no-files-found: error
-
       - name: Install dependencies
         working-directory: ./farsijudge
         run: npm install --no-audit --no-fund
