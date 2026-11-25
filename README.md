@@ -2,27 +2,27 @@
 
 سامانه آزمون آنلاین فارسی با ثبت‌نام کاربران، پاسخ‌دهی عددی، زمان‌بندی آزمون و تصحیح خودکار با Supabase.
 
-## وضعیت پروژه
+## انتشار در GitHub Pages
 
-کد اصلی پروژه در آرشیو `farsijudge-source.zip.b64` قرار دارد. گردش‌کار GitHub Actions آن را استخراج و برای GitHub Pages می‌سازد.
+کد کامل برنامه در آرشیو `farsijudge-source.tar.gz` قرار دارد. گردش‌کار GitHub Actions آرشیو را استخراج، وابستگی‌ها را نصب، برنامه را build و خروجی را در GitHub Pages منتشر می‌کند.
 
-## راه‌اندازی
+پیش از اولین انتشار، این دو **Repository Variable** را از مسیر **Settings → Secrets and variables → Actions → Variables** اضافه کنید:
 
-1. در تنظیمات Repository به **Settings → Secrets and variables → Actions → Variables** بروید.
-2. این دو Repository Variable را تعریف کنید:
-   - `VITE_SUPABASE_URL`: آدرس پروژه Supabase
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`: کلید Publishable پروژه Supabase
-3. از **Settings → Pages**، گزینه **GitHub Actions** را به‌عنوان Build and deployment انتخاب کنید.
-4. در **Actions** اجرای گردش‌کار **Deploy FarsiJudge to GitHub Pages** را بررسی کنید.
+- `VITE_SUPABASE_URL`: آدرس پروژه Supabase
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: کلید Publishable پروژه Supabase
 
-فقط کلید Publishable را در متغیرهای فرانت‌اند استفاده کنید. کلیدهای Secret یا service_role را هرگز در کد یا متغیرهای قابل‌دسترسی به فرانت‌اند قرار ندهید.
+سپس از **Settings → Pages → Build and deployment → Source** گزینه **GitHub Actions** را انتخاب کنید. بعد از هر push روی شاخه `main`، سایت به‌صورت خودکار build و deploy می‌شود.
 
-## محتوای آرشیو
+## امنیت
+
+فقط کلید عمومی Publishable را در متغیر فرانت‌اند قرار دهید. کلیدهای `sb_secret_...`، `service_role` و رمز دیتابیس را هرگز در کد سایت یا متغیرهای قابل‌دسترسی به فرانت‌اند قرار ندهید. امنیت داده‌ها باید با RLS و توابع امن دیتابیس تأمین شود.
+
+## محتوای پروژه
 
 - رابط فارسی و واکنش‌گرا
 - ثبت‌نام و ورود با Supabase Auth
-- پنل کاربر و مدیر
-- مدیریت آزمون‌ها و پاسخ‌های عددی
+- داشبورد شرکت‌کننده و پنل مدیریت
+- زمان‌بندی آزمون و پاسخ‌دهی عددی
 - تصحیح سمت پایگاه داده
 - تم روشن و تیره
-- فایل‌های SQL و راهنمای راه‌اندازی
+- فایل‌های SQL و راهنمای راه‌اندازی در آرشیو منبع
