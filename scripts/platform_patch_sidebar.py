@@ -568,3 +568,202 @@ css += """
 """
 css_path.write_text(css, encoding="utf-8")
 print("Added participant counts and directory navigation inside each user's dashboard.");
+
+
+# Manage a user's existing registration and reposition the participant count.
+app_path = Path("src/App.tsx")
+app = app_path.read_text(encoding="utf-8")
+
+exam_card_signature = """function ExamCard({ exam, now, onOpen, registered, teamMember, teamCaptain, onRegister }: {
+  exam: Exam; now: number; onOpen: () => void; registered: boolean
+  teamMember: boolean; teamCaptain: boolean; onRegister: () => void
+}) {"""
+exam_card_signature_new = """function ExamCard({ exam, now, onOpen, registered, teamMember, teamCaptain, onRegister, participantCount, onShowParticipants, onManageRegistration }: {
+  exam: Exam; now: number; onOpen: () => void; registered: boolean
+  teamMember: boolean; teamCaptain: boolean; onRegister: () => void
+  participantCount: number; onShowParticipants: () => void; onManageRegistration: () => void
+}) {"""
+if app.count(exam_card_signature) != 1:
+    raise SystemExit("ExamCard signature insertion mismatch: " + str(app.count(exam_card_signature)))
+app = app.replace(exam_card_signature, exam_card_signature_new, 1)
+
+exam_card_title = """    <h3>{exam.title}</h3><p className="exam-description">"""
+exam_card_title_new = """    <div className="exam-card-heading">
+      <h3>{exam.title}</h3>
+      <button type="button" className="exam-participant-count" onClick={onShowParticipants} aria-label={"نمایش شرکت‌کنندگان " + exam.title}>
+        <Users size={13} /><span>#</span>{fa(participantCount)}
+      </button>
+    </div><p className="exam-description">"""
+if app.count(exam_card_title) != 1:
+    raise SystemExit("ExamCard title insertion mismatch: " + str(app.count(exam_card_title)))
+app = app.replace(exam_card_title, exam_card_title_new, 1)
+
+registered_label = """{registered ? <span className="registration-done"><CheckCircle2 size={15} />ثبت‌نام انجام شده</span>"""
+registered_label_new = """{registered ? <button type="button" className="registration-done registration-manage-link" onClick={onManageRegistration} title="مدیریت یا لغو ثبت‌نام"><CheckCircle2 size={15} />ثبت‌نام انجام شده<ChevronLeft size={13} /></button>"""
+if app.count(registered_label) != 1:
+    raise SystemExit("ExamCard registered label insertion mismatch: " + str(app.count(registered_label)))
+app = app.replace(registered_label, registered_label_new, 1)
+
+participant_state_anchor = """  const [selectedParticipantContest, setSelectedParticipantContest] = useState<Exam | null>(null)"""
+if app.count(participant_state_anchor) != 1:
+    raise SystemExit("Dashboard participant state anchor mismatch: " + str(app.count(participant_state_anchor)))
+app = app.replace(participant_state_anchor, participant_state_anchor + """
+  const [selectedRegistrationContest, setSelectedRegistrationContest] = useState<Exam | null>(null)
+  const [unregisterBusy, setUnregisterBusy] = useState(false)
+  const [unregisterError, setUnregisterError] = useState('')""", 1)
+
+dashboard_cards_old = """        : <div className="exam-grid">{filtered.map((exam) => <div className="dashboard-exam-card-wrap" key={exam.id}>
+          <button type="button" className="dashboard-participant-count" onClick={() => setSelectedParticipantContest(exam)} aria-label={"نمایش شرکت‌کنندگان " + exam.title}>
+            <span>#</span>{fa(dashboardParticipantCounts[exam.id] || 0)}
+          </button>
+          <ExamCard exam={exam} now={now} onOpen={() => onOpen(exam)}
+            registered={myRegistrations.includes(exam.id) || myTeamRegistrations.includes(exam.id)}
+            teamMember={Boolean(team)} teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} />
+        </div>)}</div>}"""
+dashboard_cards_new = """        : <div className="exam-grid">{filtered.map((exam) => <ExamCard key={exam.id} exam={exam} now={now} onOpen={() => onOpen(exam)}
+          registered={myRegistrations.includes(exam.id) || myTeamRegistrations.includes(exam.id)}
+          teamMember={Boolean(team)} teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)}
+          participantCount={dashboardParticipantCounts[exam.id] || 0}
+          onShowParticipants={() => setSelectedParticipantContest(exam)}
+          onManageRegistration={() => { setUnregisterError(''); setSelectedRegistrationContest(exam) }} />)}</div>}"""
+if app.count(dashboard_cards_old) != 1:
+    raise SystemExit("Dashboard card wrapper replacement mismatch: " + str(app.count(dashboard_cards_old)))
+app = app.replace(dashboard_cards_old, dashboard_cards_new, 1)
+
+management_branch = """  if (selectedRegistrationContest) {
+    const teamRegistered = myTeamRegistrations.includes(selectedRegistrationContest.id)
+    const canCancel = getStatus(selectedRegistrationContest, now) === 'upcoming' && (!teamRegistered || team?.role === 'captain') && !isDemo
+    const cancelRegistration = async () => {
+      const client = supabase
+      const contest = selectedRegistrationContest
+      if (!client || !contest || unregisterBusy) return
+      setUnregisterBusy(true)
+      setUnregisterError('')
+      const { error } = await client.rpc('unregister_from_exam', { p_exam_id: contest.id })
+      if (error) {
+        setUnregisterError(error.message || 'لغو ثبت‌نام انجام نشد.')
+        setUnregisterBusy(false)
+        return
+      }
+      await onRefresh()
+      setUnregisterBusy(false)
+      setSelectedRegistrationContest(null)
+    }
+    return <section className="dashboard-registration-page">
+      <div className="dashboard-registration-nav">
+        <button className="back-button" onClick={() => setSelectedRegistrationContest(null)}><ArrowLeft size={16} />بازگشت به مسابقه‌ها</button>
+      </div>
+      <section className="dashboard-registration-hero">
+        <div className="dashboard-registration-copy">
+          <div className="eyebrow">REGISTRATION MANAGEMENT</div>
+          <h1>مدیریت ثبت‌نام مسابقه</h1>
+          <p>از این بخش می‌توانی وضعیت ثبت‌نام خودت را مدیریت کنی.</p>
+        </div>
+        <span className="dashboard-registration-status"><CheckCircle2 size={17} />ثبت‌نام فعال</span>
+      </section>
+      <section className="public-panel dashboard-registration-panel">
+        <div className="dashboard-registration-contest">
+          <div className="dashboard-registration-icon"><Trophy size={22} /></div>
+          <div><span>مسابقهٔ انتخاب‌شده</span><h2>{selectedRegistrationContest.title}</h2><small><CalendarDays size={14} />{dateText(selectedRegistrationContest.starts_at)}</small></div>
+        </div>
+        <div className="dashboard-registration-detail">
+          <div><span>وضعیت</span><b className="registration-state-active">ثبت‌نام انجام شده</b></div>
+          <div><span>نوع ثبت‌نام</span><b>{teamRegistered ? 'تیمی' : 'انفرادی'}</b></div>
+          {teamRegistered && <div><span>تیم</span><b>{team?.name || 'تیم شما'}</b></div>}
+        </div>
+        <div className="dashboard-registration-note">
+          <ShieldCheck size={18} />
+          <p>با لغو ثبت‌نام، نامت (و در صورت ثبت‌نام تیمی، کل تیمت) از فهرست شرکت‌کنندگان حذف می‌شود. تا قبل از شروع مسابقه می‌توانی دوباره ثبت‌نام کنی.</p>
+        </div>
+        {teamRegistered && team?.role !== 'captain' && <div className="dashboard-registration-warning">ثبت‌نام تیمی را فقط کاپیتان تیم می‌تواند لغو کند. برای لغو، از کاپیتان بخواه اقدام کند.</div>}
+        {getStatus(selectedRegistrationContest, now) !== 'upcoming' && <div className="dashboard-registration-warning">مهلت لغو ثبت‌نام به پایان رسیده است؛ پس از شروع مسابقه امکان لغو وجود ندارد.</div>}
+        {isDemo && <div className="dashboard-registration-warning">در حالت نمایشی امکان تغییر ثبت‌نام وجود ندارد.</div>}
+        {unregisterError && <div className="dashboard-registration-error">{unregisterError}</div>}
+        <div className="dashboard-registration-actions">
+          <button className="button soft" onClick={() => setSelectedRegistrationContest(null)}>بازگشت</button>
+          <button className="button danger dashboard-unregister-button" disabled={!canCancel || unregisterBusy} onClick={() => void cancelRegistration()}>
+            {unregisterBusy ? 'در حال لغو ثبت‌نام...' : teamRegistered ? 'لغو ثبت‌نام تیم' : 'لغو ثبت‌نام من'}
+            <XCircle size={16} />
+          </button>
+        </div>
+      </section>
+    </section>
+  }
+
+"""
+const registrationBranchAnchor = """  if (selectedParticipantContest) return <section className="dashboard-participants-page">"""
+if (app.count(registrationBranchAnchor) != 1) {
+    raise SystemExit("Dashboard registration page branch anchor mismatch: " + str(app.count(registrationBranchAnchor)))
+}
+app = app.replace(registrationBranchAnchor, management_branch + registrationBranchAnchor, 1)
+
+app_path.write_text(app, encoding="utf-8")
+
+css_path = Path("src/style.css")
+css = css_path.read_text(encoding="utf-8")
+css += """
+/* Dashboard contest card: participant count sits inline with the title. */
+.dashboard-list-panel .exam-card-heading {
+  display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0; margin:13px 0 6px;
+}
+.dashboard-list-panel .exam-card-heading h3 { min-width:0; margin:0; flex:1; line-height:1.65; }
+.exam-participant-count {
+  flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; min-height:29px; padding:5px 9px;
+  border:1px solid rgba(139,112,245,.25); border-radius:999px; background:rgba(139,112,245,.08);
+  color:var(--accent); font:inherit; font-size:10px; font-weight:850; cursor:pointer; direction:ltr;
+  transition:transform .16s ease,background .16s ease,border-color .16s ease;
+}
+.exam-participant-count:hover { transform:translateY(-1px); background:rgba(139,112,245,.15); border-color:rgba(139,112,245,.45); }
+.exam-participant-count span { opacity:.7; font-size:13px; }
+.exam-participant-count:focus-visible,.registration-manage-link:focus-visible { outline:3px solid rgba(157,125,255,.65); outline-offset:3px; }
+.registration-manage-link {
+  display:inline-flex; align-items:center; gap:5px; padding:4px 0; border:0; background:transparent;
+  color:#2eaa72; font:inherit; font-size:11px; font-weight:800; cursor:pointer;
+}
+.registration-manage-link:hover { color:#21865a; text-decoration:underline; }
+.dashboard-registration-page { width:100%; max-width:860px; margin:0 auto; }
+.dashboard-registration-nav { display:flex; justify-content:flex-start; margin-bottom:12px; }
+.dashboard-registration-hero {
+  display:flex; align-items:center; justify-content:space-between; gap:18px; padding:25px;
+  border:1px solid rgba(143,119,242,.2); border-radius:22px;
+  background:radial-gradient(circle at 85% 10%,rgba(147,115,255,.18),transparent 34%),var(--panel);
+}
+.dashboard-registration-copy h1 { margin:7px 0; font-size:clamp(23px,4vw,31px); }
+.dashboard-registration-copy p { color:var(--muted); font-size:12px; line-height:1.8; }
+.dashboard-registration-status {
+  flex:0 0 auto; display:inline-flex; align-items:center; gap:7px; padding:9px 13px;
+  border:1px solid rgba(46,170,114,.22); border-radius:999px; color:#259a66; background:rgba(46,170,114,.09);
+  font-size:11px; font-weight:850;
+}
+.dashboard-registration-panel { margin-top:14px; padding:clamp(18px,3vw,28px); }
+.dashboard-registration-contest { display:flex; align-items:center; gap:13px; padding-bottom:19px; border-bottom:1px solid var(--line); }
+.dashboard-registration-icon { width:48px; height:48px; display:grid; place-items:center; border-radius:15px; background:rgba(139,112,245,.11); color:var(--accent); }
+.dashboard-registration-contest > div:last-child { min-width:0; }
+.dashboard-registration-contest span { color:var(--muted); font-size:10px; }
+.dashboard-registration-contest h2 { margin:4px 0; font-size:17px; }
+.dashboard-registration-contest small { display:flex; align-items:center; gap:5px; color:var(--muted); font-size:10px; }
+.dashboard-registration-detail { display:flex; flex-wrap:wrap; gap:24px; padding:18px 0; }
+.dashboard-registration-detail > div { display:flex; flex-direction:column; gap:6px; min-width:95px; }
+.dashboard-registration-detail span { color:var(--muted); font-size:10px; }
+.dashboard-registration-detail b { color:var(--text); font-size:12px; }
+.dashboard-registration-detail .registration-state-active { color:#259a66; }
+.dashboard-registration-note { display:flex; align-items:flex-start; gap:10px; padding:13px; border-radius:13px; background:rgba(139,112,245,.07); color:var(--accent); }
+.dashboard-registration-note svg { flex:0 0 auto; margin-top:2px; }
+.dashboard-registration-note p { color:var(--muted); font-size:11px; line-height:1.9; }
+.dashboard-registration-warning,.dashboard-registration-error { margin-top:11px; padding:11px 13px; border-radius:11px; font-size:11px; line-height:1.8; }
+.dashboard-registration-warning { border:1px solid rgba(222,164,63,.2); background:rgba(222,164,63,.08); color:#c38b30; }
+.dashboard-registration-error { border:1px solid rgba(220,90,90,.22); background:rgba(220,90,90,.08); color:#cc5252; }
+.dashboard-registration-actions { display:flex; align-items:center; justify-content:flex-end; gap:9px; margin-top:20px; }
+.dashboard-unregister-button { border:1px solid rgba(220,90,90,.25)!important; color:#cf5555!important; }
+.dashboard-unregister-button:disabled { opacity:.45; cursor:not-allowed; }
+@media(max-width:600px) {
+  .dashboard-registration-hero { align-items:flex-start; flex-direction:column; padding:19px; }
+  .dashboard-registration-detail { gap:14px; }
+  .dashboard-registration-actions { align-items:stretch; flex-direction:column-reverse; }
+  .dashboard-registration-actions .button { width:100%; justify-content:center; }
+  .dashboard-list-panel .exam-card-heading { gap:7px; }
+  .exam-participant-count { padding:4px 7px; min-height:26px; }
+}
+"""
+css_path.write_text(css, encoding="utf-8")
+print("Added self-service unregistration management and inline participant counters.");
