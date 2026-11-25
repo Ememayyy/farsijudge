@@ -692,9 +692,8 @@ management_branch = """  if (selectedRegistrationContest) {
 
 """
 registrationBranchAnchor = """  if (selectedParticipantContest) return <section className="dashboard-participants-page">"""
-if (app.count(registrationBranchAnchor) != 1) {
+if app.count(registrationBranchAnchor) != 1:
     raise SystemExit("Dashboard registration page branch anchor mismatch: " + str(app.count(registrationBranchAnchor)))
-}
 app = app.replace(registrationBranchAnchor, management_branch + registrationBranchAnchor, 1)
 
 app_path.write_text(app, encoding="utf-8")
