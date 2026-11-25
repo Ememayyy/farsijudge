@@ -304,7 +304,8 @@ replace_once(
   }, [selectedExam?.id, team?.id, page, selectedStatus, myTeamRegistrations, pendingAnswerChanges])
 
   useEffect(() => {
-    if (!isAdmin || !supabase || !session?.user.id || page !== 'admin') return
+    const client = supabase
+    if (!isAdmin || !client || !session?.user.id || page !== 'admin') return
 """,
 "live shared team answer refresh"
 )
