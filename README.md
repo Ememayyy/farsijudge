@@ -1,28 +1,31 @@
-# FarsiJudge | آزمون‌یار
+# آزمون‌یار | FarsiJudge
 
-سامانه آزمون آنلاین فارسی با ثبت‌نام کاربران، پاسخ‌دهی عددی، زمان‌بندی آزمون و تصحیح خودکار با Supabase.
+سامانه آنلاین آزمون‌های عددی فارسی؛ رابط کاربری روی GitHub Pages و احراز هویت، داده‌ها و تصحیح پاسخ‌ها روی Supabase.
 
-## انتشار در GitHub Pages
+## نسخه زنده
 
-کد کامل برنامه در آرشیو `farsijudge-source.tar.gz` قرار دارد. گردش‌کار GitHub Actions آرشیو را استخراج، وابستگی‌ها را نصب، برنامه را build و خروجی را در GitHub Pages منتشر می‌کند.
+https://ememayyy.github.io/farsijudge/
 
-پیش از اولین انتشار، این دو **Repository Variable** را از مسیر **Settings → Secrets and variables → Actions → Variables** اضافه کنید:
+## راه‌اندازی Supabase
 
-- `VITE_SUPABASE_URL`: آدرس پروژه Supabase
-- `VITE_SUPABASE_PUBLISHABLE_KEY`: کلید Publishable پروژه Supabase
+1. در Supabase از **Authentication → URL Configuration** مقدار **Site URL** را روی `https://ememayyy.github.io/farsijudge/` قرار بده.
+2. در **Redirect URLs** این دو مقدار را اضافه کن:
+   - `https://ememayyy.github.io/farsijudge/`
+   - `https://ememayyy.github.io/farsijudge/**`
+3. در **Authentication → Email Templates → Confirm signup** مطمئن شو لینک از `{{ .ConfirmationURL }}` استفاده می‌کند و آدرس `localhost` به‌صورت ثابت در قالب نوشته نشده است.
+4. چون ورود بدون تأیید ایمیل را انتخاب کرده‌ای، در **Authentication → Providers → Email** گزینه **Confirm email** را خاموش کن. وقتی این گزینه خاموش باشد، ثبت‌نام با تأیید خودکار ایمیل انجام می‌شود و ایمیل تأیید ثبت‌نام ارسال نمی‌شود.
 
-سپس از **Settings → Pages → Build and deployment → Source** گزینه **GitHub Actions** را انتخاب کنید. بعد از هر push روی شاخه `main`، سایت به‌صورت خودکار build و deploy می‌شود.
+راهنمای کامل‌تر: [تنظیم URL و ایمیل Supabase](supabase/auth-url-settings.md).
 
-## امنیت
+## مدیر کردن حساب مالک
 
-فقط کلید عمومی Publishable را در متغیر فرانت‌اند قرار دهید. کلیدهای `sb_secret_...`، `service_role` و رمز دیتابیس را هرگز در کد سایت یا متغیرهای قابل‌دسترسی به فرانت‌اند قرار ندهید. امنیت داده‌ها باید با RLS و توابع امن دیتابیس تأمین شود.
+بعد از ثبت‌نام با ایمیل موردنظر، فایل [supabase/promote-admin.sql](supabase/promote-admin.sql) را در Supabase → SQL Editor اجرا کن. این فایل برای ایمیلی که مالک پروژه در گفتگو داده از پیش تنظیم شده است و در پایان نقش و وضعیت تأیید ایمیل را نمایش می‌دهد. پس از اجرای موفق، از سایت خارج شو و دوباره وارد شو تا منوی مدیریت نمایش داده شود.
 
-## محتوای پروژه
+## انتشار
 
-- رابط فارسی و واکنش‌گرا
-- ثبت‌نام و ورود با Supabase Auth
-- داشبورد شرکت‌کننده و پنل مدیریت
-- زمان‌بندی آزمون و پاسخ‌دهی عددی
-- تصحیح سمت پایگاه داده
-- تم روشن و تیره
-- فایل‌های SQL و راهنمای راه‌اندازی در آرشیو منبع
+هر Push روی شاخه `main`، پروژه را با GitHub Actions می‌سازد و روی GitHub Pages منتشر می‌کند. متغیرهای Repository زیر باید در **Settings → Secrets and variables → Actions → Variables** تعریف شده باشند:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+کلیدهای Secret یا `service_role` را هرگز در فرانت‌اند قرار نده.
