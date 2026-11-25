@@ -280,13 +280,15 @@ replace_once(
 
 replace_once(
 """  useEffect(() => {
-    if (!isAdmin || !supabase || !session?.user.id || page !== 'admin') return
+    const client = supabase
+    if (!isAdmin || !client || !session?.user.id || page !== 'admin') return
 """,
 """  useEffect(() => {
-    if (!supabase || !team?.id || !selectedExam || page !== 'exam' || selectedStatus !== 'active' || !myTeamRegistrations.includes(selectedExam.id)) return
+    const client = supabase
+    if (!client || !team?.id || !selectedExam || page !== 'exam' || selectedStatus !== 'active' || !myTeamRegistrations.includes(selectedExam.id)) return
     let alive = true
     const refreshSharedAnswers = async () => {
-      const { data } = await supabase.from('exam_answers').select('question_number,answer')
+      const { data } = await client.from('exam_answers').select('question_number,answer')
         .eq('exam_id', selectedExam.id).eq('team_id', team.id)
       if (!alive || !data) return
       setAnswerValues(() => {
