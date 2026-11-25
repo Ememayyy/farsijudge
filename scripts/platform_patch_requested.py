@@ -89,7 +89,7 @@ const_old = """  const registerForExam = async (exam: Exam) => {
     })
     if (error) notify('ثبت‌نام انجام نشد: ' + error.message, 'error')
     else {
-      notify(team ? 'تیم با موفقیت در آزمون ثبت‌نام شد.' : 'در آزمون ثبت‌نام شدید.', 'success')
+      notify(team ? 'تیم با موفقیت در آزمون ثبت‌نام شد.' : 'در مسابقه ثبت‌نام شدید.', 'success')
       await loadMainData()
     }
   }"""
@@ -198,7 +198,7 @@ once(
 "admin controls callback prop"
 )
 once(
-"""<b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b>""",
+"""<b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه مسابقه' : page === 'admin' ? 'مدیریت مسابقه‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b>""",
 """<b>{page === 'dashboard' ? 'داشبورد' : page === 'registration' ? 'انتخاب نوع ثبت‌نام' : page === 'exam' ? 'صفحه مسابقه' : page === 'admin' ? 'مدیریت مسابقه‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b>""",
 "route breadcrumb"
 )
@@ -222,7 +222,7 @@ once(
 "add live controls panel"
 )
 once(
-"""<div className="exam-heading-panel"><div><div className="eyebrow">آزمون آنلاین</div><h1>{exam.title}</h1><p>{exam.description || 'پاسخ هر سؤال را به‌صورت عددی وارد کنید.'}</p></div><StatusBadge status={status} /></div>
+"""<div className="exam-heading-panel"><div><div className="eyebrow">مسابقه آنلاین</div><h1>{exam.title}</h1><p>{exam.description || 'پاسخ هر سؤال را به‌صورت عددی وارد کنید.'}</p></div><StatusBadge status={status} /></div>
     <div className="exam-info-grid">""",
 """<div className="exam-heading-panel"><div><div className="eyebrow">مسابقه آنلاین</div><h1>{exam.title}</h1><p>{exam.description || 'پاسخ هر سؤال را به‌صورت عددی وارد کنید.'}</p></div><StatusBadge status={status} /></div>
     {(exam.tags?.length || exam.announcement) && <div className="contest-meta-panel">
