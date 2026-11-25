@@ -599,7 +599,7 @@ if app.count(exam_card_title) != 1:
 app = app.replace(exam_card_title, exam_card_title_new, 1)
 
 registered_label = """{registered ? <span className="registration-done"><CheckCircle2 size={15} />ثبت‌نام انجام شده</span>"""
-registered_label_new = """{registered ? <button type="button" className="registration-done registration-manage-link" onClick={onManageRegistration} title="مدیریت یا لغو ثبت‌نام"><CheckCircle2 size={15} />ثبت‌نام انجام شده<ChevronLeft size={13} /></button>"""
+registered_label_new = """{registered ? <button type="button" className="registration-done registration-manage-link" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onManageRegistration() }} aria-haspopup="dialog" title="مدیریت یا لغو ثبت‌نام"><CheckCircle2 size={15} />ثبت‌نام انجام شده<ChevronLeft size={13} /></button>"""
 if app.count(registered_label) != 1:
     raise SystemExit("ExamCard registered label insertion mismatch: " + str(app.count(registered_label)))
 app = app.replace(registered_label, registered_label_new, 1)
@@ -632,20 +632,32 @@ app = app.replace(dashboard_cards_old, dashboard_cards_new, 1)
 
 management_branch = """  if (selectedRegistrationContest) {
     const teamRegistered = myTeamRegistrations.includes(selectedRegistrationContest.id)
-    const canCancel = getStatus(selectedRegistrationContest, now) === 'upcoming' && (!teamRegistered || team?.role === 'captain') && !isDemo
+    const startsAt = new Date(selectedRegistrationContest.starts_at).getTime()
+    const registrationStarted = !Number.isFinite(startsAt) || now >= startsAt
+    const canCancel = !registrationStarted && (!teamRegistered || team?.role === 'captain') && !isDemo
     const cancelRegistration = async () => {
       const client = supabase
       const contest = selectedRegistrationContest
       if (!client || !contest || unregisterBusy) return
       setUnregisterBusy(true)
       setUnregisterError('')
-      const { error } = await client.rpc('unregister_from_exam', { p_exam_id: contest.id })
-      if (error) {
-        setUnregisterError(error.message || 'لغو ثبت‌نام انجام نشد.')
+      try {
+        const { error } = await client.rpc('unregister_from_exam', { p_exam_id: contest.id })
+        if (error) {
+          const message = error.message || 'لغو ثبت‌نام انجام نشد.'
+          if (error.code === 'PGRST202' || /unregister_from_exam|schema cache|could not find the function/i.test(message)) {
+            setUnregisterError('تابع لغو ثبت‌نام هنوز در Supabase نصب نشده است. فایل supabase/migrations/008_contest_unregistration.sql را در SQL Editor اجرا کن.')
+          } else {
+            setUnregisterError(message)
+          }
+          setUnregisterBusy(false)
+          return
+        }
+        window.location.reload()
+      } catch (cause) {
+        setUnregisterError(cause instanceof Error ? cause.message : 'ارتباط با سرور برقرار نشد؛ دوباره تلاش کن.')
         setUnregisterBusy(false)
-        return
       }
-      window.location.reload()
     }
     return <section className="dashboard-registration-page">
       <div className="dashboard-registration-nav">
@@ -674,7 +686,7 @@ management_branch = """  if (selectedRegistrationContest) {
           <p>با لغو ثبت‌نام، نامت (و در صورت ثبت‌نام تیمی، کل تیمت) از فهرست شرکت‌کنندگان حذف می‌شود. تا قبل از شروع مسابقه می‌توانی دوباره ثبت‌نام کنی.</p>
         </div>
         {teamRegistered && team?.role !== 'captain' && <div className="dashboard-registration-warning">ثبت‌نام تیمی را فقط کاپیتان تیم می‌تواند لغو کند. برای لغو، از کاپیتان بخواه اقدام کند.</div>}
-        {getStatus(selectedRegistrationContest, now) !== 'upcoming' && <div className="dashboard-registration-warning">مهلت لغو ثبت‌نام به پایان رسیده است؛ پس از شروع مسابقه امکان لغو وجود ندارد.</div>}
+        {registrationStarted && <div className="dashboard-registration-warning">مهلت لغو ثبت‌نام به پایان رسیده است؛ پس از شروع مسابقه امکان لغو وجود ندارد.</div>}
         {isDemo && <div className="dashboard-registration-warning">در حالت نمایشی امکان تغییر ثبت‌نام وجود ندارد.</div>}
         {unregisterError && <div className="dashboard-registration-error">{unregisterError}</div>}
         <div className="dashboard-registration-actions">
