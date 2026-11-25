@@ -496,3 +496,199 @@ function RegistrationPage({ exam, team, mode, onMode, onBack, onRegister, alread
 
 """
 replace_once(needle, insert + needle, 'welcome and registration page components')
+ 'sidebar'}>
+""",
+'mobile sidebar state'
+)
+replace_once(
+"""      <header className=\"topbar\">
+        <div className=\"breadcrumb\"><span className=\"topbar-brand\">""",
+"""      <header className=\"topbar\">
+        <button className=\"mobile-menu-toggle\" aria-label=\"باز کردن منو\" onClick={() => setMobileMenuOpen(true)}><Menu size={20} /></button>
+        <div className=\"breadcrumb\"><span className=\"topbar-brand\">""",
+'mobile menu button'
+)
+# registration route, more detailed exam results, and pass new props.
+replace_once(
+"""        {page === 'exam' && selectedExam && <ExamPage
+""",
+"""        {page === 'registration' && selectedExam && <RegistrationPage
+          exam={selectedExam} team={team} selected={registrationMode}
+          onSelect={setRegistrationMode} onBack={() => navigate('dashboard')}
+          onConfirm={() => void registerForExam(selectedExam, registrationMode)}
+          alreadyRegistered={myRegistrations.includes(selectedExam.id) || myTeamRegistrations.includes(selectedExam.id)}
+        />}
+        {page === 'exam' && selectedExam && <ExamPage
+""",
+'registration route component'
+)
+replace_once(
+"""          totalPoints={questionScore} questionResourceUrl={questionResourceUrl} teamMode={Boolean(team && myTeamRegistrations.includes(selectedExam.id))}
+""",
+"""          totalPoints={questionScore} questionResourceUrl={questionResourceUrl} teamMode={Boolean(team && myTeamRegistrations.includes(selectedExam.id))}
+          startCountdownSeconds={startCountdownSeconds} reviewRows={examReview}
+""",
+'exam countdown and review props'
+)
+replace_once(
+"""          onSetRole={setUserRole}
+          busy={adminBusy}
+""",
+"""          onSetRole={setUserRole}
+          onDeleteUser={deleteUser}
+          busy={adminBusy}
+""",
+'admin user deletion prop'
+)
+replace_once(
+"""          onSetRole={setUserRole} editingExamId={editingExamId}
+          questionPdfUrl={questionPdfUrl} questionFile={questionFile}
+          onQuestionPdfUrl={setQuestionPdfUrl} onQuestionFile={setQuestionFile}
+""",
+"""          onSetRole={setUserRole} onDeleteUser={deleteUser} editingExamId={editingExamId}
+          questionPdfUrl={questionPdfUrl} questionFile={questionFile}
+          onQuestionPdfUrl={setQuestionPdfUrl} onQuestionFile={setQuestionFile}
+          tags={adminTags} onTags={setAdminTags} resultsReleaseAt={adminResultsReleaseAt} onResultsReleaseAt={setAdminResultsReleaseAt}
+          allowLateRegistration={adminAllowLateRegistration} onAllowLateRegistration={setAdminAllowLateRegistration}
+          registrationClosesAt={adminRegistrationClosesAt} onRegistrationClosesAt={setAdminRegistrationClosesAt}
+          endAtOverride={adminEndAtOverride} onEndAtOverride={setAdminEndAtOverride}
+          announcement={adminAnnouncement} onAnnouncement={setAdminAnnouncement}
+""",
+'admin controls props'
+)
+replace_once(
+"""          onCreate={createTeam} onInvite={inviteToTeam} onRespond={respondToInvitation} />}
+""",
+"""          onCreate={createTeam} onInvite={inviteToTeam} onRespond={respondToInvitation} onLeave={leaveTeam} />}
+""",
+'leave team prop'
+)
+# Dashboard routes to registration instead of direct database mutation; nearest contest priority.
+replace_once(
+"""          team={team} onRegister={registerForExam}
+""",
+"""          team={team} onRegister={openRegistration}
+""",
+'dashboard registration route callback'
+)
+# Extend child component props and implementations.
+replace_once(
+"""function ExamPage({ exam, questions, answers, remainingSeconds, status, result, saving, demo, onAnswer, onBack, totalPoints, questionResourceUrl, teamMode }: {
+""",
+"""function ExamPage({ exam, questions, answers, remainingSeconds, status, result, saving, demo, onAnswer, onBack, totalPoints, questionResourceUrl, teamMode, startCountdownSeconds, reviewRows }: {
+""",
+'exam page props signature'
+)
+replace_once(
+"""  questionResourceUrl: string; teamMode: boolean
+}) {
+  const progress = questions.length ? Object.values(answers).filter((v) => v.trim() && validNumber(v)).length : 0
+""",
+"""  questionResourceUrl: string; teamMode: boolean; startCountdownSeconds: number; reviewRows: ExamReviewRow[]
+}) {
+  const progress = questions.length ? Object.values(answers).filter((v) => v.trim() && validNumber(v)).length : 0
+  const [paperExpanded, setPaperExpanded] = useState(false)
+""",
+'exam page countdown and preview state'
+)
+replace_once(
+"""    {questionResourceUrl && <a className=\"question-paper-link\" href={questionResourceUrl} target=\"_blank\" rel=\"noreferrer\"><ExternalLink size={17} />دانلود / مشاهده فایل صورت سؤال</a>}
+""",
+"""    {questionResourceUrl && <section className=\"paper-preview\">
+      <div className=\"paper-preview-head\"><div><b>صورت سؤال مسابقه</b><small>نمایش مستقیم در همین صفحه</small></div><div className=\"paper-preview-actions\"><button className=\"button soft small\" onClick={() => setPaperExpanded((v) => !v)}>{paperExpanded ? 'بستن پیش‌نمایش' : 'نمایش PDF'}</button><a className=\"button secondary small\" href={questionResourceUrl} target=\"_blank\" rel=\"noreferrer\"><ExternalLink size={15} />بازکردن در صفحه جدید</a></div></div>
+      {paperExpanded && <iframe src={questionResourceUrl + '#view=FitH'} title=\"صورت سؤال مسابقه\" loading=\"lazy\" />}
+    </section>}
+""",
+'embedded question pdf preview'
+)
+replace_once(
+"""    {status === 'upcoming' && <div className=\"waiting-panel\"><div className=\"waiting-icon\"><Clock3 size={24} /></div><h2>مسابقه هنوز شروع نشده است</h2><p>شروع مسابقه برای زمان زیر برنامه‌ریزی شده است:</p><strong>{dateText(exam.starts_at)}</strong><span>صفحه را باز نگه دارید یا بعداً دوباره مراجعه کنید.</span></div>}
+""",
+"""    {status === 'upcoming' && <div className=\"waiting-panel\"><div className=\"waiting-icon\"><Clock3 size={24} /></div><div className=\"eyebrow\">شمارش معکوس شروع</div><h2>مسابقه هنوز شروع نشده است</h2><strong className=\"start-countdown\" dir=\"ltr\">{durationText(startCountdownSeconds)}</strong><p>شروع مسابقه: {dateText(exam.starts_at)}</p><span>صفحه به‌صورت خودکار با رسیدن زمان شروع به‌روزرسانی می‌شود.</span></div>}
+""",
+'prestart countdown'
+)
+replace_once(
+"""    {ended && <div className=\"result-panel\"><div className=\"result-icon\"><Award size={29} /></div><div className=\"eyebrow\">مسابقه به پایان رسید</div><h2>{result ? 'نتیجه شما آماده است' : 'در حال تصحیح پاسخ‌ها'}</h2>{result ? <><div className=\"score-big\"><strong>{fa(result.score)}</strong><span>از {fa(result.max_score)} نمره</span></div><div className=\"result-stats\"><div><b>{fa(result.correct_count)}</b><span>پاسخ صحیح</span></div><div><b>{fa(Math.max(0, result.question_count - result.correct_count))}</b><span>پاسخ نادرست یا خالی</span></div><div><b>{fa(result.question_count)}</b><span>تعداد سؤال</span></div></div><p className=\"result-note\">تصحیح بر اساس برابری دقیق عددی انجام شده است.</p></> : <p>برای این مسابقه تلاشی ثبت نشده یا نتیجه هنوز آماده نیست. صفحه را کمی بعد به‌روزرسانی کنید.</p>}</div>}
+""",
+"""    {ended && <div className=\"result-panel\"><div className=\"result-icon\"><Award size={29} /></div><div className=\"eyebrow\">مسابقه به پایان رسید</div><h2>{result ? 'کارنامه شما آماده است' : 'در انتظار انتشار کارنامه'}</h2>{result ? <><div className=\"score-big\"><strong>{fa(result.score)}</strong><span>از {fa(result.max_score)} نمره</span></div><div className=\"result-percentage\">{fa(result.max_score ? Math.round(result.score / result.max_score * 1000) / 10 : 0)}٪ امتیاز کسب‌شده</div><div className=\"result-stats\"><div><b>{fa(result.correct_count)}</b><span>پاسخ صحیح</span></div><div><b>{fa(Math.max(0, result.question_count - result.correct_count))}</b><span>غلط یا بدون پاسخ</span></div><div><b>{fa(result.question_count)}</b><span>تعداد سؤال</span></div></div><p className=\"result-note\">تصحیح بر اساس برابری دقیق عددی انجام شده است.</p>
+      {reviewRows.length > 0 && <section className=\"review-section\"><div className=\"section-heading\"><div><h2>بررسی سؤال‌به‌سؤال</h2><p>پاسخ ثبت‌شده، پاسخ صحیح و نمرهٔ هر سؤال</p></div></div><div className=\"review-list\">{reviewRows.map((row) => <article className={row.is_correct ? 'review-row correct' : 'review-row wrong'} key={row.question_number}><b>سؤال {fa(row.question_number)}</b><div><small>پاسخ شما</small><strong>{row.submitted_answer === null ? 'بدون پاسخ' : fa(row.submitted_answer)}</strong></div><div><small>پاسخ صحیح</small><strong>{fa(row.correct_answer)}</strong></div><span className=\"review-status\">{row.is_correct ? 'درست' : 'نادرست'} · {fa(row.points)} نمره</span></article>)}</div></section>}
+      </> : <p>کارنامه هنوز منتشر نشده است. زمان انتشار را در جزئیات مسابقه بررسی کنید.</p>}</div>}
+""",
+'detailed score report'
+)
+# Admin component props: edit controls and user removal.
+replace_once(
+"""function AdminPage({ exams, profiles, results, busy, onCreateExam, onEditExam, onSetRole, editingExamId, questionPdfUrl, questionFile, onQuestionPdfUrl, onQuestionFile, onCancelEdit }: {
+""",
+"""function AdminPage({ exams, profiles, results, busy, onCreateExam, onEditExam, onSetRole, onDeleteUser, editingExamId, questionPdfUrl, questionFile, onQuestionPdfUrl, onQuestionFile, onCancelEdit, tags, onTags, resultsReleaseAt, onResultsReleaseAt, allowLateRegistration, onAllowLateRegistration, registrationClosesAt, onRegistrationClosesAt, endAtOverride, onEndAtOverride, announcement, onAnnouncement }: {
+""",
+'admin props signature'
+)
+replace_once(
+"""  onSetRole: (userId: string, role: 'participant' | 'admin') => void
+  editingExamId: string | null
+""",
+"""  onSetRole: (userId: string, role: 'participant' | 'admin') => void
+  onDeleteUser: (userId: string, fullName: string) => void
+  editingExamId: string | null
+""",
+'admin delete type'
+)
+replace_once(
+"""  onQuestionPdfUrl: (value: string) => void; onQuestionFile: (file: File | null) => void; onCancelEdit: () => void
+}) {
+""",
+"""  onQuestionPdfUrl: (value: string) => void; onQuestionFile: (file: File | null) => void; onCancelEdit: () => void
+  tags: string[]; onTags: (value: string[]) => void; resultsReleaseAt: string; onResultsReleaseAt: (value: string) => void
+  allowLateRegistration: boolean; onAllowLateRegistration: (value: boolean) => void; registrationClosesAt: string; onRegistrationClosesAt: (value: string) => void
+  endAtOverride: string; onEndAtOverride: (value: string) => void; announcement: string; onAnnouncement: (value: string) => void
+}) {
+""",
+'admin controls type'
+)
+# user list includes deletion button.
+replace_once(
+"""<button className=\"button soft small\" onClick={() => onSetRole(profile.id, profile.role === 'admin' ? 'participant' : 'admin')}>{profile.role === 'admin' ? 'حذف مدیریت' : 'ارتقای نقش'}</button>""",
+"""<div className=\"admin-user-actions\"><button className=\"button soft small\" onClick={() => onSetRole(profile.id, profile.role === 'admin' ? 'participant' : 'admin')}>{profile.role === 'admin' ? 'حذف مدیریت' : 'ارتقای نقش'}</button><button className=\"button danger small\" onClick={() => onDeleteUser(profile.id, profile.full_name)}><Trash2 size={14} />حذف کاربر</button></div>""",
+'user delete button'
+)
+# Advanced controls in admin form.
+replace_once(
+"""          <label className=\"field-label\">لینک مستقیم PDF صورت سؤال <input type=\"url\" value={questionPdfUrl} onChange={(e) => onQuestionPdfUrl(e.target.value)} placeholder=\"https://example.com/questions.pdf\" dir=\"ltr\" /></label>
+""",
+"""          <label className=\"field-label\">لینک مستقیم PDF صورت سؤال <input type=\"url\" value={questionPdfUrl} onChange={(e) => onQuestionPdfUrl(e.target.value)} placeholder=\"https://example.com/questions.pdf\" dir=\"ltr\" /></label>
+          <section className=\"admin-extra-settings\"><h3>تنظیمات پیشرفته مسابقه</h3>
+            <label className=\"field-label\">انتشار کارنامه <input type=\"datetime-local\" value={resultsReleaseAt} onChange={(e) => onResultsReleaseAt(e.target.value)} /></label>
+            <label className=\"toggle-row\"><input type=\"checkbox\" checked={allowLateRegistration} onChange={(e) => onAllowLateRegistration(e.target.checked)} /> اجازه ثبت‌نام پس از شروع مسابقه</label>
+            <label className=\"field-label\">بستن ثبت‌نام دیرهنگام در <input type=\"datetime-local\" value={registrationClosesAt} onChange={(e) => onRegistrationClosesAt(e.target.value)} /></label>
+            <label className=\"field-label\">زمان پایان جدید (اختیاری) <input type=\"datetime-local\" value={endAtOverride} onChange={(e) => onEndAtOverride(e.target.value)} /></label>
+            <label className=\"field-label\">اطلاعیه زنده <textarea rows={2} value={announcement} onChange={(e) => onAnnouncement(e.target.value)} /></label>
+            <div><b>تگ‌های موضوعی</b><div className=\"admin-tag-picker\">{['ترکیبیات','گراف','الگوریتم','هندسه','جبر','نظریه اعداد','احتمالات','ساختمان داده'].map((tag) => <button type=\"button\" key={tag} data-tag={tag} className={tags.includes(tag) ? 'selected' : ''} onClick={() => onTags(tags.includes(tag) ? tags.filter((x) => x !== tag) : [...tags, tag])}>{tag}</button>)}</div></div>
+          </section>
+""",
+'admin advanced controls'
+)
+# Team page leave action.
+replace_once(
+"""function TeamPage({ team, members, invitations, busy, onCreate, onInvite, onRespond }: {
+""",
+"""function TeamPage({ team, members, invitations, busy, onCreate, onInvite, onRespond, onLeave }: {
+""",
+'team leave props signature'
+)
+replace_once(
+"""  onCreate: (event: FormEvent) => void; onInvite: (event: FormEvent) => void; onRespond: (id: string, accept: boolean) => void
+}) {
+""",
+"""  onCreate: (event: FormEvent) => void; onInvite: (event: FormEvent) => void; onRespond: (id: string, accept: boolean) => void; onLeave: () => void
+}) {
+""",
+'team leave props type'
+)
+replace_once(
+"""      {team.role === 'captain' && <form className=\"team-invite-form\"""",
+"""      <div className=\"team-actions\"><span>{team.role === 'captain' ? 'کاپیتان تیم' : 'عضو تیم'}</span><button className=\"button danger small\" type=\"button\" onClick={onLeave}>ترک تیم</button></div>
+      {team.role === 'captain' && <form className=\"team-invite-form\"""",
+'team leave button'
+)
