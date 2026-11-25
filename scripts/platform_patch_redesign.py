@@ -327,7 +327,7 @@ welcome_start = s.index("function WelcomePage(")
 welcome_end = s.index("\nfunction RegistrationPage(", welcome_start)
 s = s[:welcome_start] + const_welcome + s[welcome_end:]
 
-s = s.replace("function ClipboardIcon() { return <BookOpen size={20} /> }\\n", "")
+s = s.replace("function ClipboardIcon() { return <BookOpen size={20} /> }\n", "")
 
 p.write_text(s, encoding="utf-8")
 
