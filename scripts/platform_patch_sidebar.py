@@ -645,9 +645,7 @@ management_branch = """  if (selectedRegistrationContest) {
         setUnregisterBusy(false)
         return
       }
-      await onRefresh()
-      setUnregisterBusy(false)
-      setSelectedRegistrationContest(null)
+      window.location.reload()
     }
     return <section className="dashboard-registration-page">
       <div className="dashboard-registration-nav">
