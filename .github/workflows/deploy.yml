@@ -48,7 +48,7 @@ jobs:
           mkdir -p farsijudge/scripts
           cp scripts/feature_patch.py farsijudge/scripts/feature_patch.py
           cp scripts/platform_patch.py farsijudge/scripts/platform_patch.py
-          (cd farsijudge && python3 scripts/feature_patch.py && python3 scripts/platform_patch.py)
+          (cd farsijudge && python3 scripts/feature_patch.py && python3 scripts/platform_patch_v2.py)
           mkdir -p farsijudge/public farsijudge/supabase/migrations farsijudge/supabase/email-templates
           cat logo-part-*.b64 | base64 --decode > farsijudge/public/farsijudge-logo.webp
           cp README.md farsijudge/README.md
