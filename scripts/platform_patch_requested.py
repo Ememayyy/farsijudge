@@ -229,8 +229,8 @@ once(
 )
 
 once(
-"function AdminPage({ title, description, start, duration, questions, busy, exams, results, profiles, onTitle, onDescription, onStart, onDuration, onQuestionChange, onCount, onSubmit, onBack, onEditExam, onDeleteExam, onTogglePublish, onSetRole, editingExamId, questionPdfUrl, questionFile, onQuestionPdfUrl, onQuestionFile }: {",
-"function AdminPage({ title, description, start, duration, questions, busy, exams, results, profiles, onTitle, onDescription, onStart, onDuration, onQuestionChange, onCount, onSubmit, onBack, onEditExam, onDeleteExam, onTogglePublish, onSetRole, editingExamId, questionPdfUrl, questionFile, onQuestionPdfUrl, onQuestionFile, onSaveControls }: {",
+"function AdminPage({ title, description, start, duration, questions, busy, exams, results, profiles, onTitle, onDescription, onStart, onDuration, onQuestionChange, onCount, onSubmit, onBack, onEditExam, onDeleteExam, onTogglePublish, onSetRole, onDeleteUser, editingExamId, questionPdfUrl, questionFile, onQuestionPdfUrl, onQuestionFile }: {",
+"function AdminPage({ title, description, start, duration, questions, busy, exams, results, profiles, onTitle, onDescription, onStart, onDuration, onQuestionChange, onCount, onSubmit, onBack, onEditExam, onDeleteExam, onTogglePublish, onSetRole, onDeleteUser, editingExamId, questionPdfUrl, questionFile, onQuestionPdfUrl, onQuestionFile, onSaveControls }: {",
 "AdminPage live panel signature"
 )
 once(
