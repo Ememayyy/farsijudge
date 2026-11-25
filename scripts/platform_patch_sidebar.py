@@ -213,3 +213,50 @@ css += """
 """
 css_path.write_text(css, encoding="utf-8")
 print("Applied absolutely top-docked mobile navigation and usability refinements.")
+
+
+# Add sign-out action to the account/profile area.
+app_path = Path("src/App.tsx")
+app = app_path.read_text(encoding="utf-8")
+profile_anchor = """{page === 'profile' && <ProfilePage profile={profile} email={session?.user.email || (isDemo ? demoUser.email : '')} exams={exams} />}"""
+profile_replacement = """{page === 'profile' && <>
+          <ProfilePage profile={profile} email={session?.user.email || (isDemo ? demoUser.email : '')} exams={exams} />
+          <div className="profile-menu-actions">
+            <div><b>حساب کاربری</b><span>مدیریت نشست و دسترسی حساب</span></div>
+            <button className="button soft danger-text" onClick={async () => {
+              if (supabase) await supabase.auth.signOut()
+              setPage('welcome')
+            }}>خروج از حساب کاربری</button>
+          </div>
+        </>}"""
+if app.count(profile_anchor) != 1:
+    raise SystemExit("Profile page insertion point mismatch: " + str(app.count(profile_anchor)))
+app = app.replace(profile_anchor, profile_replacement, 1)
+app_path.write_text(app, encoding="utf-8")
+
+css_path = Path("src/style.css")
+css = css_path.read_text(encoding="utf-8")
+css += """
+.profile-menu-actions {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-top:16px;
+  padding:16px 18px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel);
+}
+.profile-menu-actions > div { display:flex; flex-direction:column; gap:4px; }
+.profile-menu-actions b { color:var(--text); font-size:13px; }
+.profile-menu-actions span { color:var(--muted); font-size:11px; }
+.profile-menu-actions .danger-text { color:#dc6262; border-color:rgba(220,98,98,.25); }
+@media(max-width:640px) {
+  .profile-menu-actions { align-items:stretch; flex-direction:column; }
+  .profile-menu-actions .button { justify-content:center; }
+}
+"""
+css_path.write_text(css, encoding="utf-8")
+print("Added a responsive sign-out action to the profile area.")
