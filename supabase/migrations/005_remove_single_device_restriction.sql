@@ -102,4 +102,53 @@ drop function if exists public.is_my_single_session_active();
 drop function if exists public.require_my_single_session();
 drop table if exists public.user_active_sessions;
 
+-- Allow administrators to change result release settings after a contest ends,
+-- when the supplied end time is the existing effective end time.
+create or replace function public.admin_update_contest_controls(
+  p_exam_id uuid,
+  p_end_at_override timestamptz,
+  p_allow_late_registration boolean,
+  p_registration_closes_at timestamptz,
+  p_results_release_at timestamptz,
+  p_announcement text,
+  p_tags text[]
+)
+returns void
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_start timestamptz;
+  v_current_end timestamptz;
+  v_default_end timestamptz;
+begin
+  if not (select public.is_admin()) then raise exception 'فقط مدیر می‌تواند تنظیمات مسابقه را تغییر دهد.'; end if;
+  select starts_at, end_at_override,
+         starts_at + pg_catalog.make_interval(mins => duration_minutes)
+    into v_start, v_current_end, v_default_end
+  from public.exams where id = p_exam_id for update;
+  if v_start is null then raise exception 'مسابقه پیدا نشد.'; end if;
+  if p_end_at_override is not null
+     and p_end_at_override <= greatest(v_start, pg_catalog.now() - interval '1 minute')
+     and p_end_at_override is distinct from coalesce(v_current_end, v_default_end) then
+    raise exception 'زمان پایان جدید باید بعد از زمان شروع و زمان فعلی باشد.';
+  end if;
+  if p_registration_closes_at is not null and p_registration_closes_at <= v_start then
+    raise exception 'زمان بسته‌شدن ثبت‌نام باید بعد از شروع مسابقه باشد.';
+  end if;
+  if p_results_release_at is not null and p_results_release_at < v_start then
+    raise exception 'زمان انتشار کارنامه معتبر نیست.';
+  end if;
+  update public.exams set
+    end_at_override = p_end_at_override,
+    allow_late_registration = coalesce(p_allow_late_registration, false),
+    registration_closes_at = p_registration_closes_at,
+    results_release_at = p_results_release_at,
+    announcement = nullif(btrim(p_announcement), ''),
+    tags = coalesce(p_tags, '{}')
+  where id = p_exam_id;
+end;
+$$;
+revoke all on function public.admin_update_contest_controls(uuid, timestamptz, boolean, timestamptz, timestamptz, text, text[]) from public, anon;
+grant execute on function public.admin_update_contest_controls(uuid, timestamptz, boolean, timestamptz, timestamptz, text, text[]) to authenticated;
+
 commit;
