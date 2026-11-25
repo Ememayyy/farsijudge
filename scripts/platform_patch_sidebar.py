@@ -360,6 +360,7 @@ row_replacement = """                  <td><StatusBadge status={getStatus(exam, 
 if app.count(row_anchor) != 1:
     raise SystemExit("Public contest row anchor mismatch: " + str(app.count(row_anchor)))
 app = app.replace(row_anchor, row_replacement, 1)
+app = app.replace('<td colSpan={5}><div className="public-empty">', '<td colSpan={6}><div className="public-empty">', 1)
 
 app_path.write_text(app, encoding="utf-8")
 
