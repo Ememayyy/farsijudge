@@ -66,10 +66,7 @@ replace_once(
       supabase.from('profiles').select('id,full_name,role').eq('id', session.user.id).single(),
       supabase.from('exams').select('id,title,description,starts_at,duration_minutes,is_published,created_at').order('starts_at', { ascending: false }),
     ])
-    if (profileResponse.data) {
-      setProfile(profileResponse.data as Profile)
-      setUsernameDraft(profileResponse.data.username || '')
-    }
+    if (profileResponse.data) setProfile(profileResponse.data as Profile)
 """,
 """    const [profileResponse, examResponse, membershipResponse, invitationResponse, ownRegistrationResponse, teamRegistrationResponse] = await Promise.all([
       supabase.from('profiles').select('id,full_name,role,username').eq('id', session.user.id).single(),
@@ -79,7 +76,10 @@ replace_once(
       supabase.from('exam_registrations').select('exam_id').eq('user_id', session.user.id),
       supabase.from('exam_team_registrations').select('exam_id,team_id'),
     ])
-    if (profileResponse.data) setProfile(profileResponse.data as Profile)
+    if (profileResponse.data) {
+      setProfile(profileResponse.data as Profile)
+      setUsernameDraft(profileResponse.data.username || '')
+    }
     if (invitationResponse.data) setTeamInvitations(invitationResponse.data as unknown as TeamInvitation[])
     if (ownRegistrationResponse.data) setMyRegistrations(ownRegistrationResponse.data.map((row) => row.exam_id))
     if (teamRegistrationResponse.data) setMyTeamRegistrations(teamRegistrationResponse.data.map((row) => row.exam_id))
