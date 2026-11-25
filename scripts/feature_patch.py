@@ -29,8 +29,8 @@ type TeamInvitation = { id: string; team_id: string; invited_by: string; created
 )
 
 replace_once(
-"type ExamResult = {\\n  id: string",
-"type ExamResult = {\\n  team_id?: string | null\\n  id: string",
+"type ExamResult = {\n  id: string",
+"type ExamResult = {\n  team_id?: string | null\n  id: string",
 "team result type"
 )
 replace_once(
@@ -460,7 +460,7 @@ replace_once(
 "team nav"
 )
 replace_once(
-"""        <div className="breadcrumb"><span className="topbar-brand"><span className="brand-mark"><img src={brandLogo} alt="" /></span><span>آزمون‌یار</span></span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : 'پیمایش'}</b></div>
+"""        <div className="breadcrumb"><span className="topbar-brand"><span className="brand-mark"><img src={brandLogo} alt="" /></span><span>آزمون‌یار</span></span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : 'پروفایل من'}</b></div>
 """,
 """        <div className="breadcrumb"><span className="topbar-brand"><span className="brand-mark"><img src={brandLogo} alt="" /></span><span>آزمون‌یار</span></span><ChevronLeft size={15} /><b>{page === 'dashboard' ? 'داشبورد' : page === 'exam' ? 'صفحه آزمون' : page === 'admin' ? 'مدیریت آزمون‌ها' : page === 'team' ? 'تیم و دعوت‌ها' : 'پروفایل من'}</b></div>
 """,
