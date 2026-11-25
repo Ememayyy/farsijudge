@@ -446,6 +446,24 @@ if s.count(anchor) != 1:
     raise SystemExit("Live control/report insertion point mismatch")
 s = s.replace(anchor, controls_and_review + anchor, 1)
 
+once(
+"""      {registered ? <span className="registration-done"><CheckCircle2 size={15} />ثبت‌نام انجام شده</span>
+        : status === 'upcoming' ? (teamMember && !teamCaptain
+          ? <span className="registration-hint">ثبت‌نام تیمی با کاپیتان</span>
+          : <button className="button soft small" onClick={onRegister}><UserPlus size={15} />{teamMember ? 'ثبت‌نام تیمی' : 'ثبت‌نام در آزمون'}</button>)
+        : <span className="registration-hint">برای شرکت باید پیش از شروع ثبت‌نام کنید</span>}
+      <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
+        {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده نتیجه' : 'جزئیات آزمون'}<ChevronLeft size={16} />
+      </button>""",
+"""      {registered ? <span className="registration-done"><CheckCircle2 size={15} />ثبت‌نام انجام شده</span>
+        : status === 'upcoming' ? <button className="button soft small" onClick={onRegister} title={teamMember && !teamCaptain ? 'می‌توانید انفرادی ثبت‌نام کنید؛ ثبت‌نام تیمی با کاپیتان است.' : 'نوع ثبت‌نام را انتخاب کنید.'}><UserPlus size={15} />انتخاب نوع ثبت‌نام</button>
+        : <span className="registration-hint">برای شرکت باید پیش از شروع ثبت‌نام کنید</span>}
+      <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
+        {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده نتیجه' : 'جزئیات آزمون'}<ChevronLeft size={16} />
+      </button>""",
+"allow every participant to choose individual or team registration"
+)
+
 p.write_text(s, encoding="utf-8")
 
 cssp = Path("src/style.css")
@@ -487,8 +505,11 @@ css += """
 .registration-page-head { margin:25px 0 20px; }
 .registration-page-head h1 { margin:8px 0; font-size:28px; }
 .registration-page-head p { color:var(--muted); font-size:13px; line-height:1.9; }
-.registration-options { margin:25px 0; }
-.registration-options button { position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:9px; cursor:pointer; }
+.registration-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:25px 0; }
+.registration-options button { position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:9px; padding:20px; min-height:190px; border:1px solid var(--line); border-radius:14px; background:var(--panel); color:var(--text); text-align:right; cursor:pointer; transition:border-color .18s,transform .18s; }
+.registration-options button.selected { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.registration-options button:disabled { opacity:.52; cursor:not-allowed; }
+.registration-options button:not(:disabled):hover { transform:translateY(-2px); }
 .registration-options button b { font-size:16px; }
 .registration-options button small { color:var(--muted); font-size:12px; line-height:1.8; }
 .registration-option-icon { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; background:rgba(145,105,255,.12); color:#a987ff; }
@@ -523,6 +544,8 @@ css += """
  .welcome-features { grid-template-columns:1fr; }
  .welcome-footer { padding:18px; }
  .live-controls-grid { grid-template-columns:1fr; }
+ .registration-options { grid-template-columns:1fr; }
+ .registration-options button { min-height:0; }
  .registration-confirm-row { align-items:stretch; }
  .registration-confirm-row .button { width:100%; }
  .review-row { grid-template-columns:1fr 1fr; }
