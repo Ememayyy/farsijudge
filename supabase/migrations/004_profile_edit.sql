@@ -13,8 +13,6 @@ begin
     raise exception 'ابتدا وارد حساب کاربری شوید.';
   end if;
 
-  perform public.require_my_single_session();
-
   if p_full_name is null
      or char_length(btrim(p_full_name)) < 2
      or char_length(btrim(p_full_name)) > 60 then
