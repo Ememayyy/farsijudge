@@ -218,7 +218,7 @@ replace_once(
 "signup validation"
 )
 replace_once(
-"options: { data: { full_name: authName.trim() }, emailRedirectTo: window.location.origin + window.location.pathname },",
+"options: { data: { full_name: authName.trim() }, emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).toString() },",
 "options: { data: { full_name: authName.trim(), username: authUsername.trim() }, emailRedirectTo: window.location.origin + window.location.pathname },",
 "signup username metadata"
 )
