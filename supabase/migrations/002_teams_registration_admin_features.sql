@@ -658,7 +658,7 @@ begin
     question_file_path = excluded.question_file_path,
     updated_at = excluded.updated_at;
 end;
-$;
+$$;
 revoke all on function public.set_exam_question_resource(uuid, text, text) from public, anon;
 grant execute on function public.set_exam_question_resource(uuid, text, text) to authenticated;
 
@@ -667,7 +667,7 @@ grant execute on function public.set_exam_question_resource(uuid, text, text) to
 create or replace function public.get_exam_question_resource(p_exam_id uuid)
 returns table(question_pdf_url text, question_file_path text)
 language plpgsql stable security definer set search_path = ''
-as $
+as $$
 declare v_uid uuid := (select auth.uid());
 begin
   if v_uid is null then raise exception 'ابتدا وارد حساب کاربری شوید.'; end if;
@@ -698,7 +698,7 @@ begin
     from public.exam_question_resources r
     where r.exam_id = p_exam_id;
 end;
-$;
+$$;
 revoke all on function public.get_exam_question_resource(uuid) from public, anon;
 grant execute on function public.get_exam_question_resource(uuid) to authenticated;
 
