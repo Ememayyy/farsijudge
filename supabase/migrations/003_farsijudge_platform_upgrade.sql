@@ -290,12 +290,20 @@ create or replace function public.admin_update_contest_controls(
 returns void
 language plpgsql security definer set search_path = ''
 as $$
-declare v_start timestamptz;
+declare
+  v_start timestamptz;
+  v_current_end timestamptz;
+  v_default_end timestamptz;
 begin
   if not (select public.is_admin()) then raise exception 'فقط مدیر می‌تواند تنظیمات مسابقه را تغییر دهد.'; end if;
-  select starts_at into v_start from public.exams where id = p_exam_id for update;
+  select starts_at, end_at_override,
+         starts_at + pg_catalog.make_interval(mins => duration_minutes)
+    into v_start, v_current_end, v_default_end
+  from public.exams where id = p_exam_id for update;
   if v_start is null then raise exception 'مسابقه پیدا نشد.'; end if;
-  if p_end_at_override is not null and p_end_at_override <= greatest(v_start, pg_catalog.now() - interval '1 minute') then
+  if p_end_at_override is not null
+     and p_end_at_override <= greatest(v_start, pg_catalog.now() - interval '1 minute')
+     and p_end_at_override is distinct from coalesce(v_current_end, v_default_end) then
     raise exception 'زمان پایان جدید باید بعد از زمان شروع و زمان فعلی باشد.';
   end if;
   if p_registration_closes_at is not null and p_registration_closes_at <= v_start then
