@@ -691,7 +691,7 @@ management_branch = """  if (selectedRegistrationContest) {
   }
 
 """
-const registrationBranchAnchor = """  if (selectedParticipantContest) return <section className="dashboard-participants-page">"""
+registrationBranchAnchor = """  if (selectedParticipantContest) return <section className="dashboard-participants-page">"""
 if (app.count(registrationBranchAnchor) != 1) {
     raise SystemExit("Dashboard registration page branch anchor mismatch: " + str(app.count(registrationBranchAnchor)))
 }
