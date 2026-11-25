@@ -275,10 +275,11 @@ once_replacement = """  const runningCount = publicExams.filter((exam) => getSta
   const [participantsLoading, setParticipantsLoading] = useState(false)
 
   useEffect(() => {
-    if (!supabase) return
+    const client = supabase
+    if (!client) return
     let alive = true
     const loadCounts = async () => {
-      const { data } = await supabase.rpc('get_contest_participant_counts')
+      const { data } = await client.rpc('get_contest_participant_counts')
       if (!alive || !data) return
       const next: Record<string, number> = {}
       data.forEach((row: { exam_id: string; participant_count: number }) => {
@@ -291,12 +292,14 @@ once_replacement = """  const runningCount = publicExams.filter((exam) => getSta
   }, [exams.length])
 
   useEffect(() => {
-    if (!selectedContest || !supabase) return
+    const client = supabase
+    const contest = selectedContest
+    if (!contest || !client) return
     let alive = true
     setParticipantsLoading(true)
     setParticipants([])
     const loadParticipants = async () => {
-      const { data, error } = await supabase.rpc('get_contest_participants', { p_exam_id: selectedContest.id })
+      const { data, error } = await client.rpc('get_contest_participants', { p_exam_id: contest.id })
       if (!alive) return
       if (!error && data) setParticipants(data as { display_name: string; username: string; team_name: string | null; registered_at: string }[])
       setParticipantsLoading(false)
