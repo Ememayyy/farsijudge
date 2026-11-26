@@ -5,14 +5,14 @@ s = p.read_text(encoding="utf-8")
 
 # Global interface terminology and brand.
 s = s.replace("آزمون‌یار", "فارسی جاج").replace("آزمون", "مسابقه")
-s = s.replace("members.length < 4", "members.length < 3")
-s = s.replace("از ۴ عضو", "از ۳ عضو")
-s = s.replace("یک تیم چهار نفره", "یک تیم سه‌نفره")
-s = s.replace("سه عضو دیگر", "دو عضو دیگر")
-s = s.replace("حداکثر ۴ عضو", "حداکثر ۳ عضو")
+s = s.replace("members.length < 3", "members.length < 4")
+s = s.replace("از ۳ عضو", "از ۴ عضو")
+s = s.replace("یک تیم سه‌نفره", "یک تیم چهار نفره")
+s = s.replace("دو عضو دیگر", "سه عضو دیگر")
+s = s.replace("حداکثر ۳ عضو", "حداکثر ۴ عضو")
 
 p.write_text(s, encoding="utf-8")
-print("Applied Farsi-Judge naming and three-member team labels.")
+print("Applied Farsi-Judge naming and four-member team labels.")
 
 
 p = Path("src/App.tsx")
@@ -122,7 +122,7 @@ rep(
             <button className={registrationKind === 'individual' ? 'chosen' : ''} onClick={() => setRegistrationKind('individual')}><UserRound/><b>شرکت انفرادی</b><small>ثبت‌نام با حساب شخصی شما</small></button>
             <button disabled={!team || team.role !== 'captain'} className={registrationKind === 'team' ? 'chosen' : ''} onClick={() => setRegistrationKind('team')}><Users/><b>شرکت تیمی</b><small>{team?.role === 'captain' ? 'ثبت‌نام تیم ' + team.name : 'فقط کاپیتان می‌تواند تیم را ثبت‌نام کند'}</small></button>
           </div>
-          <div className="registration-summary"><span>زمان شروع</span><b>{dateText(selectedExam.starts_at)}</b><span>ظرفیت تیم</span><b>۳ نفر با احتساب کاپیتان</b></div>
+          <div className="registration-summary"><span>زمان شروع</span><b>{dateText(selectedExam.starts_at)}</b><span>ظرفیت تیم</span><b>۴ نفر با احتساب کاپیتان</b></div>
           <button className="button primary full" disabled={teamBusy || (registrationKind === 'team' && team?.role !== 'captain')} onClick={confirmRegistration}>تأیید و ثبت‌نام <ChevronLeft/></button>
           <button className="text-link" onClick={() => setPage('dashboard')}>بازگشت</button>
         </section>}
