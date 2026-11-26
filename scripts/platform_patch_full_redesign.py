@@ -100,17 +100,17 @@ function StatCard(props: any) {
 }
 """
 if "function StatCard(" not in app:
-    app = app.replace("\\nfunction StatusBadge(", "\\n" + stat_component + "\\nfunction StatusBadge(", 1)
+    app = app.replace("\nfunction StatusBadge(", "\n" + stat_component + "\nfunction StatusBadge(", 1)
 
 # Remove imports that belonged only to the old dashboard markup.
 app = app.replace("CalendarDays, ChevronDown, Home, Menu, Search, Sparkles, Trophy,", "CalendarDays, Menu, Search, Trophy,")
 lines = app.splitlines()
 for index, line in enumerate(lines):
     if "from 'react'" in line or 'from "react"' in line:
-        line = re.sub(r'\\b(?:type\\s+)?ReactNode\\s*,\\s*', '', line)
-        line = re.sub(r',\\s*(?:type\\s+)?ReactNode\\b', '', line)
+        line = re.sub(r'\b(?:type\s+)?ReactNode\s*,\s*', '', line)
+        line = re.sub(r',\s*(?:type\s+)?ReactNode\b', '', line)
         lines[index] = line
-app = "\\n".join(lines) + "\\n"
+app = "\n".join(lines) + "\n"
 
 
 welcome = r'''
