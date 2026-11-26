@@ -11,15 +11,13 @@ def once(old, new, label):
     s = s.replace(old, new, 1)
 
 # Shared row type for the public leaderboard.
-page_line = "type Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team' | 'leaderboard' | 'public-questions'"
+import re
 if "type LeaderboardRow =" not in s:
-    if page_line not in s:
-        raise SystemExit("Page type anchor missing")
-    s = s.replace(
-        page_line,
-        "type LeaderboardRow = { position: number; display_name: string; team_name: string | null; score: number; max_score: number; correct_count: number; wrong_count: number; question_count: number; is_team: boolean }\n" + page_line,
-        1
-    )
+    match = re.search(r"^type Page\\b", s, re.M)
+    if not match:
+        raise SystemExit("Page type declaration not found")
+    leaderboard_type = "type LeaderboardRow = { position: number; display_name: string; team_name: string | null; score: number; max_score: number; correct_count: number; wrong_count: number; question_count: number; is_team: boolean }\\n"
+    s = s[:match.start()] + leaderboard_type + s[match.start():]
 
 # --- Public landing page ---
 # WelcomePage is rendered inside the root shell. Keep review state local so it
