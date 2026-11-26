@@ -393,7 +393,7 @@ language plpgsql
 stable
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_count bigint;
 begin
@@ -413,7 +413,7 @@ begin
 
   return coalesce(v_count, 0);
 end;
-$;
+$$;
 revoke all on function public.get_my_team_pending_invitation_count(uuid) from public, anon;
 grant execute on function public.get_my_team_pending_invitation_count(uuid) to authenticated;
 
