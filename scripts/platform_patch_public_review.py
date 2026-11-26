@@ -83,13 +83,6 @@ once(
     "landing status breakdown"
 )
 
-# Add the public review route before the authenticated app shell.
-once(
-    "  if (page === 'welcome') return <WelcomePage",
-    "  if (page === 'welcome') return <WelcomePage",
-    "public questions route"
-)
-
 # The in-app contest card can open the leaderboard for ended competitions.
 s = s.replace(
     "onRegister }: {\n  exam: Exam; now: number; onOpen: () => void; registered: boolean",
