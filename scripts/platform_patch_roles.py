@@ -29,7 +29,7 @@ s = s.replace("supabase.rpc('set_exam_question_resource', {", "supabase.rpc(isDe
 s = s.replace("supabase.rpc('get_exam_question_resource', { p_exam_id: exam.id })", "supabase.rpc(isDesigner && !isAdmin ? 'get_designer_exam_question_resource' : 'get_exam_question_resource', { p_exam_id: exam.id })")
 
 once(
-    "{isAdmin && <button className={page === 'admin' ? 'nav-item selected' : 'nav-item'} onClick={() => setPage('admin')}><ShieldCheck size={19} />مدیریت آزمون‌ها</button>}",
+    "{isAdmin && <button className={page === 'admin' ? 'nav-item selected' : 'nav-item'} onClick={() => setPage('admin')}><ShieldCheck size={19} />مدیریت مسابقه‌ها</button>}",
     "{canManageContests && <button className={page === 'admin' ? 'nav-item selected' : 'nav-item'} onClick={() => setPage('admin')}><ShieldCheck size={19} />{isAdmin ? 'مدیریت مسابقه‌ها' : 'طراحی مسابقه'}</button>}",
     "designer navigation"
 )
