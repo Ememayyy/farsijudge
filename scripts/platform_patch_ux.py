@@ -319,13 +319,18 @@ once(
 """  return <section className="leaderboard-page public-review-screen" role="main">""",
 "leaderboard screen container"
 )
-once(
-"""  return <div className="public-site">
-    <header className="public-header">""",
-"""  return <div className="public-site public-review-screen">
-    <header className="public-header">""",
-"question screen container"
+question_page_start = s.index("function PublicQuestionPage(")
+question_page_end = s.index("\nfunction ProfilePage(", question_page_start)
+question_page = s[question_page_start:question_page_end]
+question_shell = '  return <div className="public-site">'
+if question_page.count(question_shell) != 1:
+    raise SystemExit("PublicQuestionPage shell insertion point mismatch")
+question_page = question_page.replace(
+    question_shell,
+    '  return <div className="public-site public-review-screen">',
+    1
 )
+s = s[:question_page_start] + question_page + s[question_page_end:]
 once(
 """      const { data, error: queryError } = await client.rpc('get_public_exam_leaderboard', { p_exam_id: exam.id })
       if (!alive) return
