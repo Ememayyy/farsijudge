@@ -499,6 +499,9 @@ begin
     raise exception 'جدول امتیازات پس از انتشار نتایج در دسترس قرار می‌گیرد.';
   end if;
 
+  -- Ensure final score rows exist even when the scheduled finalizer has not run.
+  perform public.finalize_exam_internal(p_exam_id);
+
   return query
   with scored as (
     select
