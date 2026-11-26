@@ -39,12 +39,12 @@ once(
 
 # Admin page receives a mode so designers never see global user controls.
 s = s.replace(
-    "onQuestionPdfUrl, onQuestionFile }: {",
-    "onQuestionPdfUrl, onQuestionFile, designerMode }: {"
+    "onQuestionPdfUrl, onQuestionFile, onSaveControls }: {",
+    "onQuestionPdfUrl, onQuestionFile, onSaveControls, designerMode }: {"
 )
 s = s.replace(
-    "onQuestionFile: (v: File | null) => void\n}) {",
-    "onQuestionFile: (v: File | null) => void; designerMode: boolean\n}) {"
+    "onSaveControls: (values: AdminControlValues) => Promise<void>\n}) {",
+    "onSaveControls: (values: AdminControlValues) => Promise<void>; designerMode: boolean\n}) {"
 )
 s = s.replace(
     "<section className=\"panel-card admin-users\"><div className=\"panel-title\"><div><h2>مدیریت کاربران</h2><p>تغییر نقش کاربران بین شرکت‌کننده و مدیر</p></div>",
@@ -93,7 +93,7 @@ p.write_text(s, encoding="utf-8")
 # The existing admin-file loader also supports a designer's own contest resources.
 f = Path("src/App.tsx")
 s = f.read_text(encoding="utf-8")
-s = s.replace("client.rpc('get_exam_question_resource', { p_exam_id: exam.id })", "client.rpc(isDesigner && !isAdmin ? 'get_designer_exam_question_resource' : 'get_exam_question_resource', { p_exam_id: exam.id })")
+s = s.replace("client.rpc('get_exam_question_resource', { p_exam_id: exam.id })", "client.rpc(designerMode ? 'get_designer_exam_question_resource' : 'get_exam_question_resource', { p_exam_id: exam.id })")
 f.write_text(s, encoding="utf-8")
 
 cssp = Path("src/style.css")
