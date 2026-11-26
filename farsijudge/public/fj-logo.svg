@@ -1,7 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b69bff"/><stop offset="1" stop-color="#7040d5"/></linearGradient></defs>
-<rect width="64" height="64" rx="17" fill="#0b0b10"/>
-<path d="M32 5 55 18v28L32 59 9 46V18L32 5Z" fill="none" stroke="url(#g)" stroke-width="2.8"/>
-<path d="M20 20h25M20 20v27M20 32h16M36 20v27" fill="none" stroke="#f7f2ff" stroke-width="4" stroke-linecap="round"/>
-<path d="m37 39 5 5 9-12" fill="none" stroke="#b89bff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">FarsiJudge FJ logo</title>
+  <desc id="desc">FJ monogram framed by code brackets and a branching algorithm graph.</desc>
+  <defs>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#violet)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 67 168 142 120 207 M256 67 344 142 392 207 M168 142 210 207 M344 142 302 207"/>
+  </g>
+  <g fill="#fff" stroke="#7C3AED" stroke-width="10">
+    <circle cx="256" cy="67" r="24"/>
+    <circle cx="168" cy="142" r="21"/>
+    <circle cx="344" cy="142" r="21"/>
+    <circle cx="120" cy="207" r="17"/>
+    <circle cx="210" cy="207" r="17"/>
+    <circle cx="302" cy="207" r="17"/>
+    <circle cx="392" cy="207" r="17"/>
+  </g>
+  <g fill="none" stroke="url(#violet)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M79 278 39 321 79 364"/>
+    <path d="M433 278 473 321 433 364"/>
+  </g>
+  <g fill="#fff" stroke="#7C3AED" stroke-width="9" stroke-linejoin="round">
+    <path d="M132 244H326L307 285H184L174 320H277L258 363H164L144 449H87L111 341Z"/>
+    <path d="M355 244H429L393 393C382 436 357 461 316 461H257L269 416H311C333 416 340 402 346 379Z"/>
+  </g>
 </svg>
