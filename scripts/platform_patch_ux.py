@@ -19,14 +19,25 @@ def once(old: str, new: str, label: str) -> None:
 once(
 """    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
+      if (nextSession) setPage('dashboard')
       if (!nextSession) {
         setProfile(null)
         setExams([])
-        setSelectedExam(null)
         setPage('welcome')
       }
     })""",
-"only sign out changes route"
+"""    const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      setSession(nextSession)
+      if (event === 'SIGNED_IN' && nextSession) setPage((current) => current === 'auth' ? 'dashboard' : current)
+      if (event === 'SIGNED_OUT' || !nextSession) {
+        setProfile(null)
+        setExams([])
+        setSelectedExam(null)
+        setSelectedPublicExam(null)
+        setPage('welcome')
+      }
+    })""",
+"navigate after sign-in only from auth screen"
 )
 
 # Global public-review route state belongs to App, not to the Dashboard card component.
