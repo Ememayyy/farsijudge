@@ -76,7 +76,7 @@ if users_start >= 0:
     if opener not in admin[max(0, users_start - 40):users_start]:
         admin = admin[:users_start] + opener + admin[users_start:]
         users_start += len(opener)
-    users_end = admin.rfind("</section>", users_start)
+    users_end = admin.find("</section>", users_start)
     if users_end < 0:
         raise SystemExit("Admin user panel closing tag not found")
     users_end += len("</section>")
