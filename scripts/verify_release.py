@@ -130,8 +130,19 @@ if APP.is_file():
     check("از ۴ عضو" in app or "از 4 عضو" in app, "Team capacity label does not advertise four people.")
     check(not re.search(r"team\.role\s*===\s*['\"]captain['\"]\s*&&\s*members\.length\s*<\s*3", app),
           "A stale three-person team limit remains in the UI.")
+    check("team.role === 'captain' && members.length < 4" not in app,
+          "Team invitation UI still ignores pending invitations.")
     check("onSetRole(p.id, 'designer')" in app, "Administrator UI is missing the control to assign designer role.")
     check("طراح مسابقه" in app, "Designer role label is missing from the administrator UI.")
+
+team_migration_path = MIGRATIONS / "009_restore_four_person_teams.sql"
+check(team_migration_path.is_file(), "Migration 009 is missing.")
+if team_migration_path.is_file():
+    team_sql = team_migration_path.read_text(encoding="utf-8")
+    check("v_member_count + v_pending_count >= 4" in team_sql,
+          "Database invite RPC does not count existing pending invitations.")
+    check("v_members + v_pending >= 4" in team_sql,
+          "Database invitation trigger does not enforce the four-person capacity.")
 
 migration_path = MIGRATIONS / "010_public_review_leaderboard_designers.sql"
 check(migration_path.is_file(), "Migration 010 is missing from the built source tree.")
