@@ -105,7 +105,7 @@ once(
             </select>
             <span>{fa(visibleAdminExams.length)} مسابقه</span>
           </div>
-          <div className="admin-exam-list">{visibleAdminExams.map((exam) => <div className="admin-exam-row" """.replace('className="admin-exam-row" "', 'className="admin-exam-row"'),
+          <div className="admin-exam-list">{visibleAdminExams.map((exam) => <div className="admin-exam-row" """.replace('className="admin-exam-row" "', 'className="admin-exam-row" '),
     "admin exam search controls"
 )
 
