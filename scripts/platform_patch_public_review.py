@@ -77,34 +77,58 @@ once(
     "dashboard leaderboard view"
 )
 
-# Add a public leaderboard control to ended cards, keeping active/upcoming
-# interactions unchanged.
-exam_card_signature = "function ExamCard({ exam, now, onOpen, registered, teamMember, teamCaptain, onRegister }: {"
-once(
-    exam_card_signature,
-    "function ExamCard({ exam, now, onOpen, registered, teamMember, teamCaptain, onRegister, onLeaderboard }: {",
-    "exam card leaderboard callback"
+# Add review and leaderboard actions to ended contest cards. Use the generated
+# component signature rather than depending on one exact whitespace layout.
+card_start = s.index("function ExamCard(")
+card_end = s.index("\\nfunction StatusBadge(", card_start)
+card = s[card_start:card_end]
+match = re.search(r"function ExamCard\\(\\{([^}]*)\\}\\s*:\\s*\\{", card)
+if not match:
+    raise SystemExit("ExamCard component declaration not found")
+params = match.group(1)
+if "onLeaderboard" not in params:
+    params = params.rstrip() + ", onLeaderboard, onReviewQuestions"
+    card = card[:match.start(1)] + params + card[match.end(1):]
+if "onLeaderboard: () => void" not in card:
+    card = card.replace(
+        "onRegister: () => void",
+        "onRegister: () => void; onLeaderboard: () => void; onReviewQuestions: () => void",
+        1
+    )
+main_button_end = '      </button>\\n    </div>\\n    <div className="exam-card-bottom">'
+if main_button_end not in card:
+    raise SystemExit("ExamCard action footer not found")
+card = card.replace(
+    main_button_end,
+    '      </button>\\n      {ended && <><button className="button soft small leaderboard-card-link" onClick={onReviewQuestions}><FileUp size={14} />صورت سؤال</button><button className="button soft small leaderboard-card-link" onClick={onLeaderboard}><Trophy size={14} />جدول امتیازات</button></>}\\n    </div>\\n    <div className="exam-card-bottom">',
+    1
 )
-once(
-    "  teamMember: boolean; teamCaptain: boolean; onRegister: () => void\n}) {",
-    "  teamMember: boolean; teamCaptain: boolean; onRegister: () => void; onLeaderboard: () => void\n}) {",
-    "exam card leaderboard callback type"
+s = s[:card_start] + card + s[card_end:]
+
+# The Dashboard owns both review views, so signed-in users can reach them too.
+s = s.replace(
+    "  const [leaderboardExam, setLeaderboardExam] = useState<Exam | null>(null)",
+    "  const [leaderboardExam, setLeaderboardExam] = useState<Exam | null>(null)\\n  const [reviewExam, setReviewExam] = useState<Exam | null>(null)",
+    1
 )
-once(
-    """      <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
-        {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده نتیجه' : 'جزئیات آزمون'}<ChevronLeft size={16} />
-      </button>""",
-    """      <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
-        {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده سؤال‌ها و نتیجه' : 'جزئیات مسابقه'}<ChevronLeft size={16} />
-      </button>
-      {ended && <button className="button soft small leaderboard-card-link" onClick={onLeaderboard}><Trophy size={14} />جدول امتیازات</button>}""",
-    "ended contest card leaderboard button"
+s = s.replace(
+    "  if (leaderboardExam) return <PublicLeaderboardPage exam={leaderboardExam} onBack={() => setLeaderboardExam(null)} />",
+    "  if (leaderboardExam) return <PublicLeaderboardPage exam={leaderboardExam} onBack={() => setLeaderboardExam(null)} />\\n  if (reviewExam) return <PublicQuestionPage exam={reviewExam} onBack={() => setReviewExam(null)} onLeaderboard={() => setLeaderboardExam(reviewExam)} />",
+    1
 )
-once(
-    "teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} />",
-    "teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} onLeaderboard={() => setLeaderboardExam(exam)} />",
-    "dashboard card leaderboard callback"
+
+dashboard_start = s.index("function Dashboard(")
+dashboard_end = s.index("\\nfunction ClipboardIcon(", dashboard_start)
+dashboard = s[dashboard_start:dashboard_end]
+old_call = "onRegister={() => onRegister(exam)} />"
+if old_call not in dashboard:
+    raise SystemExit("Dashboard ExamCard call not found")
+dashboard = dashboard.replace(
+    old_call,
+    "onRegister={() => onRegister(exam)} onReviewQuestions={() => setReviewExam(exam)} onLeaderboard={() => setLeaderboardExam(exam)} />",
+    1
 )
+s = s[:dashboard_start] + dashboard + s[dashboard_end:]
 
 # --- Public review components ---
 components = r'''
