@@ -15,7 +15,7 @@ once("  const changeUserRole = async (userId: string, role: 'participant' | 'adm
 once("onSetRole={changeUserRole} editingExamId={editingExamId}","onSetRole={changeUserRole} onDeleteUser={deleteUser} editingExamId={editingExamId}")
 once("onSetRole, editingExamId, questionPdfUrl","onSetRole, onDeleteUser, editingExamId, questionPdfUrl")
 once("onSetRole: (userId: string, role: 'participant' | 'admin') => void; editingExamId","onSetRole: (userId: string, role: 'participant' | 'admin') => void; onDeleteUser: (userId: string) => void; editingExamId")
-once("onSetRole(p.id, 'admin')}>ارتقای مدیر</button>}</div>)}</div>","onSetRole(p.id, 'admin')}>ارتقای مدیر</button>}<button className='button soft small danger-text' onClick={() => onDeleteUser(p.id)}>حذف کاربر</button></div>)}</div>")
+once("<button className=\"button soft small\" onClick={() => onSetRole(p.id, 'admin')}>ارتقای مدیر</button></>}</div></div>)}</div>","<button className=\"button soft small\" onClick={() => onSetRole(p.id, 'admin')}>ارتقای مدیر</button></>}</div><button className='button soft small danger-text' onClick={() => onDeleteUser(p.id)}>حذف کاربر</button></div></div>)}</div>")
 once("  const createTeam = async (event: FormEvent) => {","""  const leaveTeam = async () => {
     if (!supabase || !window.confirm('از تیم فعلی خارج می‌شوید؟')) return
     const { error } = await supabase.rpc('leave_team')
