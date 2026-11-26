@@ -306,6 +306,27 @@ $$;
 revoke all on function public.designer_set_exam_question_resource(uuid, text, text) from public, anon;
 grant execute on function public.designer_set_exam_question_resource(uuid, text, text) to authenticated;
 
+create or replace function public.get_designer_exam_question_resource(p_exam_id uuid)
+returns table(question_pdf_url text, question_file_path text)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $
+begin
+  if not (select public.can_manage_exam(p_exam_id))
+     or not (select public.is_contest_designer()) then
+    raise exception 'فقط طراح همان مسابقه می‌تواند فایل سؤال را مشاهده کند.';
+  end if;
+  return query
+  select r.question_pdf_url, r.question_file_path
+  from public.exam_question_resources r
+  where r.exam_id = p_exam_id;
+end;
+$;
+revoke all on function public.get_designer_exam_question_resource(uuid) from public, anon;
+grant execute on function public.get_designer_exam_question_resource(uuid) to authenticated;
+
 -- Designers may upload only into the folder belonging to their own contest.
 drop policy if exists "designers_upload_own_question_files" on storage.objects;
 create policy "designers_upload_own_question_files"
