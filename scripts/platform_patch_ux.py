@@ -54,9 +54,22 @@ if "'leaderboard'" not in page_type_line or "'public-questions'" not in page_typ
 
 # Global public-review route state belongs to App, not to the Dashboard card component.
 once(
+"const [page, setPage] = useState<Page>('welcome')",
+`const [page, setPage] = useState<Page>(() => {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('farsijudge-route') || 'null')
+    const routes: Page[] = ['welcome', 'auth', 'dashboard', 'registration', 'exam', 'admin', 'profile', 'team', 'leaderboard', 'public-questions']
+    return routes.includes(saved?.page) ? saved.page : 'welcome'
+  } catch {
+    return 'welcome'
+  }
+})`,
+"restore active route from session storage"
+)
+once(
 "const [sidebarOpen, setSidebarOpen] = useState(false)",
-"const [sidebarOpen, setSidebarOpen] = useState(false)\n  const [selectedPublicExam, setSelectedPublicExam] = useState<Exam | null>(null)",
-"global public review state"
+"const [sidebarOpen, setSidebarOpen] = useState(false)\n  const [selectedPublicExam, setSelectedPublicExam] = useState<Exam | null>(null)\n  const [routeSnapshotReady, setRouteSnapshotReady] = useState(false)\n  useEffect(() => {\n    try {\n      const saved = JSON.parse(sessionStorage.getItem('farsijudge-route') || 'null')\n      if (saved && typeof saved === 'object') {\n        if (saved.selectedExam && typeof saved.selectedExam.id === 'string') setSelectedExam(saved.selectedExam as Exam)\n        if (saved.selectedPublicExam && typeof saved.selectedPublicExam.id === 'string') setSelectedPublicExam(saved.selectedPublicExam as Exam)\n      }\n    } catch { /* Ignore an invalid or unavailable session snapshot. */ }\n    setRouteSnapshotReady(true)\n  }, [])\n  useEffect(() => {\n    if (!routeSnapshotReady) return\n    try {\n      sessionStorage.setItem('farsijudge-route', JSON.stringify({ page, selectedExam, selectedPublicExam }))\n    } catch { /* Storage can be unavailable in private browsing. */ }\n  }, [routeSnapshotReady, page, selectedExam, selectedPublicExam])",
+"global public review state and tab-return route persistence"
 )
 
 # Remove page-local review state and early returns from WelcomePage and Dashboard.
