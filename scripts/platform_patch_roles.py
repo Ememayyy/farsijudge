@@ -110,6 +110,8 @@ css = cssp.read_text(encoding="utf-8")
 css += """
 .designer-role { color:#8d68e8; background:rgba(141,104,232,.12); }
 .designer-hidden { display:none !important; }
+.admin-role-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+@media (max-width:640px) { .admin-role-actions { width:100%; justify-content:flex-start; } }
 """
 cssp.write_text(css, encoding="utf-8")
 print("Applied designer role and owner-scoped contest management UI.")
