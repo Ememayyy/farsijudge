@@ -65,25 +65,20 @@ admin = head + type_block + body
 admin = admin.replace("isDesigner && !isAdmin", "designerMode")
 s = s[:admin_start] + admin + s[admin_end:]
 
-# Ensure the global-user-management panel is rendered only for admins.
-# Add the opening condition by its structural tag, not by a brittle heading string.
+# Hide the global-user-management panel by class for designers. This keeps
+# the JSX structure flat and avoids conditional wrapper braces.
 admin_start = s.index("function AdminPage(")
 admin_end = s.index("function ProfilePage(", admin_start)
 admin = s[admin_start:admin_end]
-users_start = admin.find('<section className="panel-card admin-users">')
-if users_start >= 0:
-    opener = "{!designerMode && "
-    if opener not in admin[max(0, users_start - 40):users_start]:
-        admin = admin[:users_start] + opener + admin[users_start:]
-        users_start += len(opener)
-    users_end = admin.find("</section>", users_start)
-    if users_end < 0:
-        raise SystemExit("Admin user panel closing tag not found")
-    users_end += len("</section>")
-    tail = admin[users_end:]
-    if not __import__("re").match(r"\s*}", tail):
-        admin = admin[:users_end] + "}" + admin[users_end:]
-    s = s[:admin_start] + admin + s[admin_end:]
+admin = admin.replace(
+    '{!designerMode && <section className="panel-card admin-users">',
+    '<section className={"panel-card admin-users " + (designerMode ? "designer-hidden" : "")}>'
+)
+admin = admin.replace(
+    '<section className="panel-card admin-users">',
+    '<section className={"panel-card admin-users " + (designerMode ? "designer-hidden" : "")}>'
+)
+s = s[:admin_start] + admin + s[admin_end:]
 
 # Designers edit only their own contests, and do not receive the global user/results lists.
 s = s.replace(
@@ -114,6 +109,7 @@ cssp = Path("src/style.css")
 css = cssp.read_text(encoding="utf-8")
 css += """
 .designer-role { color:#8d68e8; background:rgba(141,104,232,.12); }
+.designer-hidden { display:none !important; }
 """
 cssp.write_text(css, encoding="utf-8")
 print("Applied designer role and owner-scoped contest management UI.")
