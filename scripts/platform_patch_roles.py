@@ -37,26 +37,34 @@ once(
     "designer navigation"
 )
 
-# Admin page receives a mode so designers never see global user controls.
-s = s.replace(
-    "onQuestionPdfUrl, onQuestionFile, onSaveControls }: {",
-    "onQuestionPdfUrl, onQuestionFile, onSaveControls, designerMode }: {"
-)
-s = s.replace(
-    "onSaveControls: (values: AdminControlValues) => Promise<void>\n}) {",
-    "onSaveControls: (values: AdminControlValues) => Promise<void>; designerMode: boolean\n}) {"
-)
-s = s.replace(
-    "<section className=\"panel-card admin-users\"><div className=\"panel-title\"><div><h2>مدیریت کاربران</h2><p>تغییر نقش کاربران بین شرکت‌کننده و مدیر</p></div>",
-    "{!designerMode && <section className=\"panel-card admin-users\"><div className=\"panel-title\"><div><h2>مدیریت کاربران</h2><p>تغییر نقش کاربران بین شرکت‌کننده، طراح و مدیر</p></div>"
-)
-s = s.replace(
-    """<span className={p.role === 'admin' ? 'role-pill admin-role' : 'role-pill'}>{p.role === 'admin' ? 'مدیر' : 'شرکت‌کننده'}</span>{p.role === 'admin' ? <button className="button soft small" onClick={() => onSetRole(p.id, 'participant')}>حذف مدیریت</button> : <button className="button soft small" onClick={() => onSetRole(p.id, 'admin')}>ارتقای مدیر</button>}""",
-    """<span className={p.role === 'admin' ? 'role-pill admin-role' : p.role === 'designer' ? 'role-pill designer-role' : 'role-pill'}>{p.role === 'admin' ? 'مدیر' : p.role === 'designer' ? 'طراح مسابقه' : 'شرکت‌کننده'}</span>
-          {p.role !== 'participant' && <button className="button soft small" onClick={() => onSetRole(p.id, 'participant')}>بازگرداندن به شرکت‌کننده</button>}
-          {p.role === 'participant' && <button className="button soft small" onClick={() => onSetRole(p.id, 'designer')}>تبدیل به طراح</button>}
-          {p.role !== 'admin' && <button className="button soft small" onClick={() => onSetRole(p.id, 'admin')}>ارتقای مدیر</button>}"""
-)
+# AdminPage receives a local boolean mode; do not reference App-only role variables
+# from inside this separate React component.
+admin_start = s.index("function AdminPage(")
+admin_end = s.index("function ProfilePage(", admin_start)
+admin = s[admin_start:admin_end]
+
+head_end = admin.find("}: {")
+if head_end < 0:
+    raise SystemExit("AdminPage props destructuring boundary not found")
+head = admin[:head_end]
+if "designerMode" not in head:
+    if "onSaveControls" in head:
+        head = head.replace("onSaveControls", "onSaveControls, designerMode", 1)
+    elif "onQuestionFile" in head:
+        head = head.replace("onQuestionFile", "onQuestionFile, designerMode", 1)
+    else:
+        raise SystemExit("AdminPage props destructuring anchor not found")
+type_end = admin.find("}) {", head_end)
+if type_end < 0:
+    raise SystemExit("AdminPage props type closing boundary not found")
+type_block = admin[head_end:type_end]
+if "designerMode:" not in type_block:
+    type_block += "\\n  designerMode: boolean"
+body = admin[type_end:]
+admin = head + type_block + body
+admin = admin.replace("isDesigner && !isAdmin", "designerMode")
+s = s[:admin_start] + admin + s[admin_end:]
+
 # Close the designer-only conditional at the actual end of the user panel.
 admin_start = s.index("function AdminPage(")
 admin_end = s.index("function ProfilePage(", admin_start)
