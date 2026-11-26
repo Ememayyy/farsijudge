@@ -59,7 +59,7 @@ s = s.replace(
 )
 # Close the designer-only conditional at the actual end of the user panel.
 admin_start = s.index("function AdminPage(")
-admin_end = s.index("\\nfunction ProfilePage(", admin_start)
+admin_end = s.index("function ProfilePage(", admin_start)
 admin = s[admin_start:admin_end]
 users_start = admin.find('<section className="panel-card admin-users">')
 if users_start >= 0:
