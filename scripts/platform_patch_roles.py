@@ -15,6 +15,8 @@ s = s.replace("role: 'participant' | 'admin'; username?: string", "role: 'partic
 s = s.replace("type Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team'", "type Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team' | 'leaderboard' | 'public-questions'")
 s = s.replace("  is_published: boolean\n  question_pdf_url?: string | null", "  is_published: boolean\n  created_by?: string | null\n  end_at_override?: string | null\n  question_pdf_url?: string | null")
 s = s.replace("select('id,title,description,starts_at,duration_minutes,is_published,created_at')", "select('id,title,description,starts_at,duration_minutes,is_published,created_at,created_by,end_at_override')")
+s = s.replace("results_release_at,announcement,tags,created_at'", "results_release_at,announcement,tags,created_at,created_by'")
+
 
 m = __import__("re").search(r"^(\s*)const isAdmin\s*=.*$", s, __import__("re").M)
 if not m:
