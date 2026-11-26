@@ -480,7 +480,7 @@ returns table(
   is_team boolean
 )
 language plpgsql
-stable
+volatile
 security definer
 set search_path = ''
 as $$
