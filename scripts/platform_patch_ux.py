@@ -93,7 +93,7 @@ once(
 )
 
 once(
-"function Dashboard({ exams, profile, now, onOpen, onAdmin, isAdmin, isDemo, onRefresh, myRegistrations, myTeamRegistrations, team, onRegister }: {",
+"function Dashboard({ exams, profile, now, onOpen, onAdmin, isAdmin, isDemo, myRegistrations, myTeamRegistrations, team, onRegister }: {",
 "function Dashboard({ exams, profile, now, onOpen, onAdmin, isAdmin, isDemo, onRefresh, myRegistrations, myTeamRegistrations, team, onRegister, onReviewQuestions, onLeaderboard }: {",
 "dashboard review callbacks"
 )
