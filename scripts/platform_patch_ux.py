@@ -59,7 +59,10 @@ once(
   try {
     const saved = JSON.parse(sessionStorage.getItem('farsijudge-route') || 'null')
     const routes: Page[] = ['welcome', 'auth', 'dashboard', 'registration', 'exam', 'admin', 'profile', 'team', 'leaderboard', 'public-questions']
-    return routes.includes(saved?.page) ? saved.page : 'welcome'
+    if (!routes.includes(saved?.page)) return 'welcome'
+    if (['exam', 'registration'].includes(saved.page) && !saved.selectedExam?.id) return 'dashboard'
+    if (['leaderboard', 'public-questions'].includes(saved.page) && !saved.selectedPublicExam?.id) return 'dashboard'
+    return saved.page
   } catch {
     return 'welcome'
   }
