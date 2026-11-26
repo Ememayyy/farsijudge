@@ -120,7 +120,9 @@ s = s.replace(
 )
 
 dashboard_start = s.index("function Dashboard(")
-dashboard_end = s.index("\nfunction ClipboardIcon(", dashboard_start)
+dashboard_end = s.find("\nfunction ", dashboard_start + len("function Dashboard("))
+if dashboard_end < 0:
+    raise SystemExit("Dashboard end boundary not found")
 dashboard = s[dashboard_start:dashboard_end]
 old_call = "onRegister={() => onRegister(exam)} />"
 if old_call not in dashboard:
