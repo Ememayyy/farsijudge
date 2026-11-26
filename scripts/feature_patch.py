@@ -46,6 +46,7 @@ replace_once(
   const [usernameDraft, setUsernameDraft] = useState('')
   const [team, setTeam] = useState<Team | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [pendingTeamInviteCount, setPendingTeamInviteCount] = useState(0)
   const [teamInvitations, setTeamInvitations] = useState<TeamInvitation[]>([])
   const [myRegistrations, setMyRegistrations] = useState<string[]>([])
   const [myTeamRegistrations, setMyTeamRegistrations] = useState<string[]>([])
@@ -84,6 +85,12 @@ replace_once(
     if (ownRegistrationResponse.data) setMyRegistrations(ownRegistrationResponse.data.map((row) => row.exam_id))
     if (teamRegistrationResponse.data) setMyTeamRegistrations(teamRegistrationResponse.data.map((row) => row.exam_id))
     if (membershipResponse.data) {
+      if (membershipResponse.data.role === 'captain') {
+        const { data: pendingCount, error: pendingCountError } = await supabase.rpc('get_my_team_pending_invitation_count', { p_team_id: membershipResponse.data.team_id })
+        setPendingTeamInviteCount(pendingCountError ? 0 : Number(pendingCount) || 0)
+      } else {
+        setPendingTeamInviteCount(0)
+      }
       const [teamResponse, memberResponse] = await Promise.all([
         supabase.from('teams').select('id,name,captain_id').eq('id', membershipResponse.data.team_id).single(),
         supabase.from('team_members').select('team_id,user_id,role').eq('team_id', membershipResponse.data.team_id),
@@ -101,6 +108,7 @@ replace_once(
     } else {
       setTeam(null)
       setTeamMembers([])
+      setPendingTeamInviteCount(0)
     }
 """,
 "main data loading"
@@ -647,7 +655,7 @@ replace_once(
           questionPdfUrl={questionPdfUrl} questionFile={questionFile}
           onQuestionPdfUrl={setQuestionPdfUrl} onQuestionFile={setQuestionFile}
         />}
-        {page === 'team' && <TeamPage team={team} members={teamMembers} invitations={teamInvitations}
+        {page === 'team' && <TeamPage team={team} members={teamMembers} invitations={teamInvitations} pendingInvitationCount={pendingTeamInviteCount}
           teamName={teamName} inviteIdentifier={inviteIdentifier} busy={teamBusy}
           usernameDraft={usernameDraft} onUsernameDraft={setUsernameDraft} onSaveUsername={saveUsername}
           onTeamName={setTeamName} onInviteIdentifier={setInviteIdentifier}
@@ -781,8 +789,8 @@ replace_once(
 )
 
 insert_at = source.index("function ProfilePage(")
-team_component = """function TeamPage({ team, members, invitations, teamName, inviteIdentifier, busy, usernameDraft, onUsernameDraft, onSaveUsername, onTeamName, onInviteIdentifier, onCreate, onInvite, onRespond }: {
-  team: Team | null; members: TeamMember[]; invitations: TeamInvitation[]
+team_component = """function TeamPage({ team, members, invitations, pendingInvitationCount, teamName, inviteIdentifier, busy, usernameDraft, onUsernameDraft, onSaveUsername, onTeamName, onInviteIdentifier, onCreate, onInvite, onRespond }: {
+  team: Team | null; members: TeamMember[]; invitations: TeamInvitation[]; pendingInvitationCount: number
   teamName: string; inviteIdentifier: string; busy: boolean; usernameDraft: string
   onUsernameDraft: (v: string) => void; onSaveUsername: (e: FormEvent) => void
   onTeamName: (v: string) => void; onInviteIdentifier: (v: string) => void
@@ -802,7 +810,7 @@ team_component = """function TeamPage({ team, members, invitations, teamName, in
     {team ? <section className="panel-card team-panel">
       <div className="panel-title"><div><h2>{team.name}</h2><p>{team.role === 'captain' ? 'شما کاپیتان تیم هستید.' : 'عضو تیم هستید؛ ثبت‌نام آزمون تیمی با کاپیتان است.'}</p></div><span className="private-chip">{fa(members.length)} از ۴ عضو</span></div>
       <div className="team-member-list">{members.map((member) => <div className="team-member-row" key={member.user_id}><div className="avatar tiny">{member.full_name.slice(0, 1)}</div><div className="admin-exam-copy"><b>{member.full_name}</b><small dir="ltr">@{member.username || '—'}</small></div><span className="role-pill">{member.role === 'captain' ? 'کاپیتان' : 'عضو'}</span></div>)}</div>
-      {team.role === 'captain' && members.length < 4 && <form className="team-invite-form" onSubmit={onInvite}><label className="field-label">دعوت با نام کاربری یا ایمیل<input value={inviteIdentifier} onChange={(e) => onInviteIdentifier(e.target.value)} placeholder="username یا email@example.com" dir="ltr" /></label><button className="button primary" disabled={busy || !inviteIdentifier.trim()} type="submit"><UserPlus size={16} />ارسال دعوت</button></form>}
+      {team.role === 'captain' && members.length + pendingInvitationCount < 4 && <form className="team-invite-form" onSubmit={onInvite}><label className="field-label">دعوت با نام کاربری یا ایمیل<input value={inviteIdentifier} onChange={(e) => onInviteIdentifier(e.target.value)} placeholder="username یا email@example.com" dir="ltr" /></label><button className="button primary" disabled={busy || !inviteIdentifier.trim()} type="submit"><UserPlus size={16} />ارسال دعوت</button></form>}
       {team.role === 'captain' && <p className="muted small">هر تیم حداکثر یک کاپیتان و سه عضو دیگر دارد. پس از ثبت‌نام تیم در آزمون پیش‌رو، ترکیب اعضا تا پایان آزمون ثابت می‌ماند.</p>}
     </section> : <section className="panel-card team-panel">
       <div className="panel-title"><div><h2>هنوز عضو تیمی نیستید</h2><p>می‌توانید یک تیم بسازید یا یکی از دعوت‌نامه‌ها را بپذیرید.</p></div></div>
