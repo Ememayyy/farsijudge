@@ -40,6 +40,18 @@ once(
 "navigate after sign-in only from auth screen"
 )
 
+# The auth/registration patch expands Page before the designer patch runs.
+# Add the public review routes here, after all earlier Page transformations.
+page_type_match = re.search(r"^type Page = (.+)$", s, re.M)
+if not page_type_match:
+    raise SystemExit("Page type declaration was not found.")
+page_type_line = page_type_match.group(0)
+if "'leaderboard'" not in page_type_line or "'public-questions'" not in page_type_line:
+    if "| 'team'" not in page_type_line:
+        raise SystemExit("Could not extend Page type with public review routes.")
+    extended_page_type = page_type_line.replace("| 'team'", "| 'team' | 'leaderboard' | 'public-questions'")
+    s = s.replace(page_type_line, extended_page_type, 1)
+
 # Global public-review route state belongs to App, not to the Dashboard card component.
 once(
 "const [sidebarOpen, setSidebarOpen] = useState(false)",
