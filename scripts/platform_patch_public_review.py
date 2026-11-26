@@ -23,7 +23,7 @@ if "type LeaderboardRow =" not in s:
 # Locate the actual generated WelcomePage by function boundaries instead of
 # relying on exact whitespace in the source template.
 welcome_start = s.index("function WelcomePage(")
-welcome_end = s.index("\\nfunction RegistrationPage(", welcome_start)
+welcome_end = s.index("function RegistrationPage(", welcome_start)
 welcome = s[welcome_start:welcome_end]
 return_marker = '  return <div className="public-site">'
 return_pos = welcome.find(return_marker)
