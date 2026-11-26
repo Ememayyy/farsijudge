@@ -164,11 +164,11 @@ function getContestTagTone(tag: string): string {
   const value = tag.trim().toLocaleLowerCase().replace(/[\s‌ـ_-]+/g, '')
   if (value.includes('ترکیبیات') || value.includes('combinatorics')) return 'combinatorics'
   if (value.includes('الگوریتم') || value.includes('algorithm')) return 'algorithm'
-  if (value.includes('برنامه‌نویسی') || value.includes('برنامه نویسی') || value.includes('programming') || value.includes('coding')) return 'programming'
+  if (value.includes('برنامهنویسی') || value.includes('programming') || value.includes('coding')) return 'programming'
   if (value.includes('گراف') || value.includes('graph')) return 'graph'
   if (value.includes('جبر') || value.includes('algebra')) return 'algebra'
   if (value.includes('هندسه') || value.includes('geometry')) return 'geometry'
-  if (value.includes('نظریه اعداد') || value.includes('numbertheory')) return 'number-theory'
+  if (value.includes('نظریهاعداد') || value.includes('numbertheory')) return 'number-theory'
   if (value.includes('احتمال') || value.includes('probability')) return 'probability'
   if (value.includes('ریاضی') || value.includes('math')) return 'mathematics'
   if (value.includes('فیزیک') || value.includes('physics')) return 'physics'
@@ -203,8 +203,11 @@ once(
 "public contest table tags"
 )
 once(
-"""<div className="admin-exam-copy"><b>{exam.title}</b><small>{dateText(exam.starts_at)} · {exam.is_published ? 'منتشرشده' : 'پیش‌نویس'}</small></div>""",
-"""<div className="admin-exam-copy"><b>{exam.title}</b><small>{dateText(exam.starts_at)} · {exam.is_published ? 'منتشرشده' : 'پیش‌نویس'}</small><ContestTagList tags={exam.tags} compact /></div>""",
+"""<small>{dateText(exam.starts_at)} · {exam.is_published ? 'منتشرشده' : 'پیش‌نویس'}</small>
+              <div className="admin-exam-files">""",
+"""<small>{dateText(exam.starts_at)} · {exam.is_published ? 'منتشرشده' : 'پیش‌نویس'}</small>
+              <ContestTagList tags={exam.tags} compact />
+              <div className="admin-exam-files">""",
 "admin contest list tags"
 )
 once(
