@@ -55,7 +55,7 @@ if "'leaderboard'" not in page_type_line or "'public-questions'" not in page_typ
 # Global public-review route state belongs to App, not to the Dashboard card component.
 once(
 "const [page, setPage] = useState<Page>('welcome')",
-`const [page, setPage] = useState<Page>(() => {
+"""const [page, setPage] = useState<Page>(() => {
   try {
     const saved = JSON.parse(sessionStorage.getItem('farsijudge-route') || 'null')
     const routes: Page[] = ['welcome', 'auth', 'dashboard', 'registration', 'exam', 'admin', 'profile', 'team', 'leaderboard', 'public-questions']
@@ -63,7 +63,7 @@ once(
   } catch {
     return 'welcome'
   }
-})`,
+})""",
 "restore active route from session storage"
 )
 once(
