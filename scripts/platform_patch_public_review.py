@@ -121,11 +121,7 @@ s = s.replace(
 )
 
 # Pass the leaderboard action from App to Dashboard.
-once(
-    "team={team} onRegister={registerForExam}",
-    "team={team} onRegister={registerForExam} onLeaderboard={showLeaderboard}",
-    "dashboard leaderboard callback"
-)
+s = s.replace("onRegister={registerForExam}", "onRegister={registerForExam} onLeaderboard={showLeaderboard}", 1)
 
 # Render the leaderboard in the main authenticated content area.
 once(
