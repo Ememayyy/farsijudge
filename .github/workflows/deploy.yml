@@ -72,6 +72,7 @@ jobs:
           cp supabase/migrations/006_public_contest_feed.sql farsijudge/supabase/migrations/006_public_contest_feed.sql
           cp supabase/migrations/007_contest_participants.sql farsijudge/supabase/migrations/007_contest_participants.sql
           cp supabase/migrations/008_contest_unregistration.sql farsijudge/supabase/migrations/008_contest_unregistration.sql
+          cp supabase/migrations/009_restore_four_person_teams.sql farsijudge/supabase/migrations/009_restore_four_person_teams.sql
           cp supabase/email-templates/confirm-signup.html farsijudge/supabase/email-templates/confirm-signup.html
 
       - name: Install dependencies
