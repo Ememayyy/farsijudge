@@ -54,7 +54,7 @@ once(
       }""",
 """      if (alive) {
         setSession(data.session)
-        if (data.session) setPage('dashboard')
+        if (data.session) setPage((current) => current === 'welcome' || current === 'auth' ? 'dashboard' : current)
         setLoading(false)
       }""",
 "restore logged-in route"
