@@ -216,10 +216,12 @@ once(
               <div className="admin-exam-files">""",
 "admin contest list tags"
 )
-once(
-"(exam.title + ' ' + (exam.description || '')).toLowerCase()",
-"(exam.title + ' ' + (exam.description || '') + ' ' + (exam.tags || []).join(' ')).toLowerCase()",
-"search contests by tag"
+search_anchor = "(exam.title + ' ' + (exam.description || '')).toLowerCase()"
+if search_anchor not in s:
+    raise SystemExit("Contest search expression was not found.")
+s = s.replace(
+    search_anchor,
+    "(exam.title + ' ' + (exam.description || '') + ' ' + (exam.tags || []).join(' ')).toLowerCase()"
 )
 
 # 3) Topic tags in create/edit form and persist them on the contest row.
