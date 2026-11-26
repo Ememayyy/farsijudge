@@ -18,7 +18,6 @@ s = s.replace(
 once(
     "  const [questionResourceUrl, setQuestionResourceUrl] = useState('')",
     """  const [questionResourceUrl, setQuestionResourceUrl] = useState('')
-  const [publicQuestionExam, setPublicQuestionExam] = useState<Exam | null>(null)
   const [leaderboardExam, setLeaderboardExam] = useState<Exam | null>(null)
   const [leaderboardRows, setLeaderboardRows] = useState<LeaderboardRow[]>([])
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)""",
@@ -28,12 +27,7 @@ once(
 open_anchor = "  const openExam = (exam: Exam) => {"
 if open_anchor not in s:
     raise SystemExit("openExam handler not found")
-s = s.replace(open_anchor, """  const showPublicQuestions = (exam: Exam) => {
-    setPublicQuestionExam(exam)
-    setPage('public-questions')
-  }
-
-  const showLeaderboard = async (exam: Exam) => {
+s = s.replace(open_anchor, """  const showLeaderboard = async (exam: Exam) => {
     setLeaderboardExam(exam)
     setLeaderboardRows([])
     setLeaderboardLoading(true)
@@ -53,23 +47,23 @@ s = s.replace(open_anchor, """  const showPublicQuestions = (exam: Exam) => {
 # Pass the new actions into the public welcome page.
 once(
     "      now={now}\n    />",
-    "      now={now}\n      onShowQuestions={showPublicQuestions}\n      onShowLeaderboard={showLeaderboard}\n    />",
+    "      now={now}\n      onShowLeaderboard={showLeaderboard}\n    />",
     "welcome public actions"
 )
 s = s.replace(
     "function WelcomePage({ theme, onToggleTheme, onLogin, onRegister, onDemo, showDemo, exams, now }: {",
-    "function WelcomePage({ theme, onToggleTheme, onLogin, onRegister, onDemo, showDemo, exams, now, onShowQuestions, onShowLeaderboard }: {"
+    "function WelcomePage({ theme, onToggleTheme, onLogin, onRegister, onDemo, showDemo, exams, now, onShowLeaderboard }: {"
 )
 s = s.replace(
     "showDemo: boolean; exams: Exam[]; now: number\n}) {",
-    "showDemo: boolean; exams: Exam[]; now: number; onShowQuestions: (exam: Exam) => void; onShowLeaderboard: (exam: Exam) => void\n}) {",
+    "showDemo: boolean; exams: Exam[]; now: number; onShowLeaderboard: (exam: Exam) => void\n}) {",
     1
 )
 s = s.replace(
     """<td><button className="public-row-action" onClick={onLogin}>جزئیات <ChevronLeft size={14} /></button></td>""",
     """<td className="public-row-actions">
                     {getStatus(exam, now) === 'ended'
-                      ? <><button className="public-row-action" onClick={() => onShowQuestions(exam)}>صورت سؤال <FileUp size={14} /></button><button className="public-row-action" onClick={() => onShowLeaderboard(exam)}>امتیازات <Trophy size={14} /></button></>
+                      ? <><button className="public-row-action" onClick={() => setReviewExam(exam)}>صورت سؤال <FileUp size={14} /></button><button className="public-row-action" onClick={() => onShowLeaderboard(exam)}>امتیازات <Trophy size={14} /></button></>
                       : <button className="public-row-action" onClick={onLogin}>جزئیات <ChevronLeft size={14} /></button>}
                   </td>"""
 )
@@ -77,7 +71,7 @@ s = s.replace(
 # Landing-page status counts include all published contests.
 once(
     "  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length",
-    "  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length\n  const upcomingCount = publicExams.filter((exam) => getStatus(exam, now) === 'upcoming').length\n  const endedCount = publicExams.filter((exam) => getStatus(exam, now) === 'ended').length",
+    "  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length\n  const upcomingCount = publicExams.filter((exam) => getStatus(exam, now) === 'upcoming').length\n  const endedCount = publicExams.filter((exam) => getStatus(exam, now) === 'ended').length\n  const [reviewExam, setReviewExam] = useState<Exam | null>(null)\n  if (reviewExam) return <PublicQuestionPage exam={reviewExam} onBack={() => setReviewExam(null)} onLeaderboard={() => onShowLeaderboard(reviewExam)} />",
     "landing contest counts"
 )
 once(
@@ -92,7 +86,7 @@ once(
 # Add the public review route before the authenticated app shell.
 once(
     "  if (page === 'welcome') return <WelcomePage",
-    "  if (page === 'public-questions' && publicQuestionExam) return <PublicQuestionPage exam={publicQuestionExam} onBack={() => setPage('welcome')} onLeaderboard={() => void showLeaderboard(publicQuestionExam)} />\n  if (page === 'welcome') return <WelcomePage",
+    "  if (page === 'welcome') return <WelcomePage",
     "public questions route"
 )
 
