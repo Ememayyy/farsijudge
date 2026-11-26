@@ -341,7 +341,7 @@ returns void
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_start timestamptz;
   v_current_end timestamptz;
@@ -381,7 +381,7 @@ begin
     tags = coalesce(p_tags, '{}')
   where id = p_exam_id and created_by = (select auth.uid());
 end;
-$;
+$$;
 revoke all on function public.designer_update_contest_controls(uuid, timestamptz, boolean, timestamptz, timestamptz, text, text[]) from public, anon;
 grant execute on function public.designer_update_contest_controls(uuid, timestamptz, boolean, timestamptz, timestamptz, text, text[]) to authenticated;
 
