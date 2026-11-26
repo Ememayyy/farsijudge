@@ -82,6 +82,36 @@ function Dashboard({ exams, profile, now, onOpen, onAdmin, isAdmin, isDemo, myRe
 '''
 app = replace_region(app, "function Dashboard(", "\nfunction StatusBadge(", dashboard, "Dashboard component")
 
+# Keep the shared statistic tile used by ProfilePage, independently of the new dashboard.
+stat_component = """
+function StatCard(props: any) {
+  const label = props.label || props.title || props.name || ''
+  const value = props.value ?? props.count ?? props.total ?? '—'
+  const detail = props.description || props.subtitle || props.detail || props.caption || ''
+  return <div className={'stat-card oj-shared-stat ' + (props.className || '')}>
+    {props.icon && <span className="oj-shared-stat-icon">{props.icon}</span>}
+    <span className="oj-shared-stat-copy">
+      {label && <small>{label}</small>}
+      <strong>{value}</strong>
+      {detail && <em>{detail}</em>}
+    </span>
+  </div>
+}
+"""
+if "function StatCard(" not in app:
+    app = app.replace("\\nfunction StatusBadge(", "\\n" + stat_component + "\\nfunction StatusBadge(", 1)
+
+# Remove imports that belonged only to the old dashboard markup.
+app = app.replace("CalendarDays, ChevronDown, Home, Menu, Search, Sparkles, Trophy,", "CalendarDays, Menu, Search, Trophy,")
+lines = app.splitlines()
+for index, line in enumerate(lines):
+    if "from 'react'" in line or 'from "react"' in line:
+        line = re.sub(r'\\b(?:type\\s+)?ReactNode\\s*,\\s*', '', line)
+        line = re.sub(r',\\s*(?:type\\s+)?ReactNode\\b', '', line)
+        lines[index] = line
+app = "\\n".join(lines) + "\\n"
+
+
 welcome = r'''
 function WelcomePage({ theme, onToggleTheme, onLogin, onRegister, onDemo, showDemo, exams, now, onReviewQuestions, onLeaderboard }: {
   theme: 'light' | 'dark'; onToggleTheme: () => void; onLogin: () => void
