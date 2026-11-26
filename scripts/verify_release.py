@@ -168,6 +168,29 @@ if team_migration_path.is_file():
 
 migration_path = MIGRATIONS / "010_public_review_leaderboard_designers.sql"
 check(migration_path.is_file(), "Migration 010 is missing from the built source tree.")
+problem_engine_path = MIGRATIONS / "011_problem_engine_foundation.sql"
+check(problem_engine_path.is_file(), "Migration 011 problem engine foundation is missing.")
+if problem_engine_path.is_file():
+    sql = problem_engine_path.read_text(encoding="utf-8")
+    for required in (
+        "create table if not exists public.problems",
+        "create table if not exists public.problem_tags",
+        "create table if not exists public.problem_tag_links",
+        "create table if not exists public.exam_problems",
+        "create table if not exists public.problem_submissions",
+        "create table if not exists public.problem_private_data",
+        "create table if not exists public.problem_manual_grades",
+        "public.update_my_profile_details",
+        "contest_type text",
+        "rating_mode text",
+        "allow_virtual boolean",
+    ):
+        check(required in sql, f"Migration 011 is missing required problem/profile schema contract: {required}.")
+    check("revoke all on public.problems" in sql and "public.problem_private_data" in sql,
+          "Migration 011 must keep answer keys and judge configuration inaccessible to browser roles.")
+    check("grant select on public.problem_assets, public.problem_submissions to authenticated" in sql,
+          "Migration 011 is missing owner-scoped submission and asset read grants.")
+
 if migration_path.is_file():
     sql = migration_path.read_text(encoding="utf-8")
     start = sql.lower().find("create or replace function public.get_public_exam_leaderboard(")
@@ -196,7 +219,7 @@ except ImportError:
     if os.environ.get("REQUIRE_PGLAST") == "1":
         errors.append("pglast is required for SQL syntax checks but is not installed.")
 else:
-    for number in range(2, 11):
+    for number in range(2, 12):
         matches = sorted(MIGRATIONS.glob(f"{number:03d}_*.sql"))
         check(len(matches) == 1, f"Expected exactly one migration numbered {number:03d}.")
         if matches:
