@@ -135,6 +135,20 @@ if APP.is_file():
           "Team invitation UI still ignores pending invitations.")
     check("onSetRole(p.id, 'designer')" in app, "Administrator UI is missing the control to assign designer role.")
     check("طراح مسابقه" in app, "Designer role label is missing from the administrator UI.")
+    check("setPage((current) => current === 'auth' ? 'dashboard' : current)" in app,
+          "Auth listener must not reset the current route when a session is refreshed.")
+    check("setSelectedPublicExam" in app and "page === 'public-questions'" in app and "page === 'leaderboard'" in app,
+          "Public review pages must use the top-level route state.")
+    check("onReviewQuestions(exam)" in app and "onLeaderboard(exam)" in app,
+          "Public review buttons must navigate through the root route callbacks.")
+    check("function ContestTagList(" in app and "function getContestTagTone(" in app,
+          "Colored contest tag rendering is missing.")
+    for tag in ("combinatorics", "algorithm", "programming", "graph", "algebra", "geometry"):
+        check(f"return '{tag}'" in app, f"Contest tag color mapping is missing: {tag}.")
+    check("tagsText={adminTags}" in app and "onTagsText={setAdminTags}" in app,
+          "Contest designer form is missing topic tag input.")
+    check("tags: normalizedExamTags" in app,
+          "Contest topic tags are not persisted on create/edit.")
 
 team_migration_path = MIGRATIONS / "009_restore_four_person_teams.sql"
 check(team_migration_path.is_file(), "Migration 009 is missing.")
