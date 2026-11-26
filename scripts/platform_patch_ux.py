@@ -279,18 +279,14 @@ once(
 "normalize contest tags"
 )
 once(
-"""        } else notify('آزمون و پاسخ‌نامه با موفقیت ویرایش شدند.', 'success')
-      }
-    } else {""",
-"""        } else {
+"else notify('آزمون و پاسخ‌نامه با موفقیت ویرایش شدند.', 'success')",
+"""else {
           const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', editingExamId)
           if (tagError) {
             notify('آزمون ویرایش شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
             failed = true
           } else notify('آزمون، پاسخ‌نامه و تگ‌ها با موفقیت ویرایش شدند.', 'success')
-        }
-      }
-    } else {""",
+        }""",
 "persist edited contest tags"
 )
 once(
