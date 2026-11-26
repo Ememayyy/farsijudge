@@ -456,8 +456,8 @@ set search_path = ''
 as $$
 declare v_release_at timestamptz;
 begin
-  select coalesce(
-    e.results_release_at,
+  select greatest(
+    coalesce(e.results_release_at, coalesce(e.end_at_override, e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes))),
     coalesce(e.end_at_override, e.starts_at + pg_catalog.make_interval(mins => e.duration_minutes))
   )
   into v_release_at
@@ -508,7 +508,8 @@ grant execute on function public.get_public_exam_leaderboard(uuid) to anon, auth
 
 -- Do not truncate the public feed to the first 50 contests. Preserve metadata
 -- used by the frontend to distinguish upcoming, active and ended contests.
-create or replace function public.get_public_contests()
+drop function if exists public.get_public_contests();
+create function public.get_public_contests()
 returns table (
   id uuid,
   title text,
