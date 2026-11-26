@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Second-generation FarsiJudge layouts: contest hub, workspace, auth and contest room."""
 from pathlib import Path
+import re
 
 app_path = Path("src/App.tsx")
 css_path = Path("src/style.css")
