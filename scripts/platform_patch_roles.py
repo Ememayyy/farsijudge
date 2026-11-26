@@ -65,17 +65,23 @@ admin = head + type_block + body
 admin = admin.replace("isDesigner && !isAdmin", "designerMode")
 s = s[:admin_start] + admin + s[admin_end:]
 
-# Close the designer-only conditional at the actual end of the user panel.
+# Ensure the global-user-management panel is rendered only for admins.
+# Add the opening condition by its structural tag, not by a brittle heading string.
 admin_start = s.index("function AdminPage(")
 admin_end = s.index("function ProfilePage(", admin_start)
 admin = s[admin_start:admin_end]
 users_start = admin.find('<section className="panel-card admin-users">')
 if users_start >= 0:
+    opener = "{!designerMode && "
+    if opener not in admin[max(0, users_start - 40):users_start]:
+        admin = admin[:users_start] + opener + admin[users_start:]
+        users_start += len(opener)
     users_end = admin.find("</section>", users_start)
     if users_end < 0:
         raise SystemExit("Admin user panel closing tag not found")
     users_end += len("</section>")
-    if admin[users_end:users_end + 1] != "}":
+    tail = admin[users_end:]
+    if not __import__("re").match(r"\\s*}", tail):
         admin = admin[:users_end] + "}" + admin[users_end:]
     s = s[:admin_start] + admin + s[admin_end:]
 
