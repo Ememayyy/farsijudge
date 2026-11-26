@@ -213,6 +213,11 @@ if "ContestTagList tags={exam.tags}" not in card:
     if card.count(title_anchor) != 1:
         raise SystemExit("ExamCard title tag insertion point mismatch")
     card = card.replace(title_anchor, title_anchor + "<ContestTagList tags={exam.tags} />", 1)
+card = card.replace(
+    'return <article className="exam-card">',
+    'return <article className={"exam-card exam-card--" + getContestTagTone(exam.tags?.[0] || "")}>',
+    1
+)
 s = s[:card_start] + card + s[card_end:]
 
 once(
@@ -268,11 +273,20 @@ label_end = admin.find("</label>", description_index)
 if label_start < 0 or label_end < 0:
     raise SystemExit("Could not isolate the admin description field.")
 label_end += len("</label>")
-tag_field = """
-          <label className="field-label">تگ‌های موضوعی مسابقه
+tag_field = """          <label className="field-label">تگ‌های موضوعی مسابقه
             <input value={tagsText} onChange={(e) => onTagsText(e.target.value)} placeholder="مثلاً ترکیبیات، گراف، الگوریتم" />
-            <small>تگ‌ها را با ویرگول جدا کن؛ رنگ هر تگ به‌صورت خودکار انتخاب می‌شود.</small>
-          </label>"""
+            <small>تگ‌ها را با ویرگول جدا کن؛ رنگ کارت مسابقه بر اساس اولین تگ انتخاب می‌شود.</small>
+          </label>
+          <div className="contest-tag-preset-wrap">
+            <span className="contest-tag-preset-title">انتخاب سریع موضوع</span>
+            <div className="contest-tag-preset-list">{['ترکیبیات', 'الگوریتم', 'برنامه‌نویسی', 'گراف', 'جبر', 'هندسه', 'نظریه اعداد', 'احتمال'].map((tag) =>
+              <button key={tag} type="button" className="contest-tag-preset" onClick={() => {
+                const current = tagsText.split(',').map((item) => item.trim()).filter(Boolean)
+                onTagsText(current.includes(tag) ? current.filter((item) => item !== tag).join(', ') : [...current, tag].join(', '))
+              }}>{tag}</button>
+            )}</div>
+            <ContestTagList tags={tagsText.split(',')} compact />
+          </div>"""
 if "تگ‌های موضوعی مسابقه" not in admin:
     admin = admin[:label_end] + tag_field + admin[label_end:]
     s = s[:admin_start] + admin + s[admin_end:]
@@ -401,6 +415,30 @@ once(
 )
 
 css += r"""
+
+/* Topic-colored contest cards and quick tag choices */
+.exam-card { position:relative; overflow:hidden; transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.exam-card[class*="exam-card--"] { border-top:3px solid var(--contest-accent); }
+.exam-card[class*="exam-card--"]::before { content:""; position:absolute; inset:0 0 0 auto; width:4px; background:var(--contest-accent); opacity:.8; pointer-events:none; }
+.exam-card[class*="exam-card--"] .exam-symbol { color:var(--contest-accent); background:var(--contest-accent-soft); }
+.exam-card[class*="exam-card--"]:hover { border-color:var(--contest-accent); box-shadow:0 12px 30px var(--contest-shadow); }
+.exam-card--combinatorics { --contest-accent:#1d9a61; --contest-accent-soft:rgba(34,184,111,.14); --contest-shadow:rgba(34,184,111,.14); }
+.exam-card--algorithm { --contest-accent:#d84d59; --contest-accent-soft:rgba(226,75,87,.13); --contest-shadow:rgba(226,75,87,.14); }
+.exam-card--programming { --contest-accent:#347ed7; --contest-accent-soft:rgba(59,130,246,.14); --contest-shadow:rgba(59,130,246,.14); }
+.exam-card--graph { --contest-accent:#b18b12; --contest-accent-soft:rgba(240,190,40,.18); --contest-shadow:rgba(220,175,25,.15); }
+.exam-card--algebra { --contest-accent:#cb741c; --contest-accent-soft:rgba(237,145,52,.16); --contest-shadow:rgba(237,145,52,.15); }
+.exam-card--geometry { --contest-accent:#8756d8; --contest-accent-soft:rgba(146,102,230,.16); --contest-shadow:rgba(146,102,230,.15); }
+.exam-card--number-theory { --contest-accent:#168b9b; --contest-accent-soft:rgba(34,184,197,.14); --contest-shadow:rgba(34,184,197,.14); }
+.exam-card--probability { --contest-accent:#bc4f91; --contest-accent-soft:rgba(210,89,158,.14); --contest-shadow:rgba(210,89,158,.14); }
+.exam-card--mathematics { --contest-accent:#6b65d8; --contest-accent-soft:rgba(115,108,224,.15); --contest-shadow:rgba(115,108,224,.14); }
+.exam-card--physics { --contest-accent:#278b80; --contest-accent-soft:rgba(43,170,152,.15); --contest-shadow:rgba(43,170,152,.14); }
+.exam-card--default { --contest-accent:var(--line); --contest-accent-soft:var(--panel-2); --contest-shadow:rgba(80,80,100,.07); }
+.contest-tag-preset-wrap { display:flex; flex-direction:column; gap:8px; margin:-3px 0 16px; }
+.contest-tag-preset-title { color:var(--muted); font-size:11px; }
+.contest-tag-preset-list { display:flex; flex-wrap:wrap; gap:6px; }
+.contest-tag-preset { border:1px solid var(--line); background:var(--panel-2); color:var(--text); border-radius:999px; padding:6px 10px; font-size:10px; font-weight:700; cursor:pointer; transition:background .15s ease,border-color .15s ease,transform .15s ease; }
+.contest-tag-preset:hover { border-color:var(--accent); background:var(--panel); transform:translateY(-1px); }
+.contest-tag-preset:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
 /* Readable topic badges */
 .contest-tag-list { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:9px 0 3px; }
