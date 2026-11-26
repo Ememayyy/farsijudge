@@ -44,7 +44,7 @@ replace_once(
     "auth visual description"
 )
 replace_once(
-    '<div className="auth-kicker">سامانه برگزاری مسابقه آنلاین</div>',
+    '<div className="auth-kicker">سامانه برگزاری آزمون آنلاین</div>',
     '<div className="auth-kicker">THINK CLEAR · COMPETE FAIR</div>',
     "auth visual kicker"
 )
