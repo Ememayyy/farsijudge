@@ -38,11 +38,15 @@ replace_once(
     '<h1>هر مسئله،<br /><span>یک فرصت تازه.</span></h1>',
     "auth visual headline"
 )
-replace_once(
-    '<p>محیطی ساده و امن برای آزمون‌های عددی، با ثبت خودکار پاسخ‌ها و تصحیح دقیق.</p>',
-    '<p>وارد فضای رقابت شو؛ مسابقه‌ها را دنبال کن، با دقت حل کن و نتیجهٔ تلاش‌هایت را ثبت کن.</p>',
-    "auth visual description"
-)
+# Update the paragraph inside the authentication brand panel by structure, not copy text.
+visual_start = app.find('<div className="auth-visual-content">')
+if visual_start < 0:
+    raise SystemExit("Authentication visual content container was not found.")
+paragraph_start = app.find("<p>", visual_start)
+paragraph_end = app.find("</p>", paragraph_start)
+if paragraph_start < 0 or paragraph_end < 0:
+    raise SystemExit("Authentication visual description paragraph was not found.")
+app = app[:paragraph_start] + '<p>وارد فضای رقابت شو؛ مسابقه‌ها را دنبال کن، با دقت حل کن و نتیجهٔ تلاش‌هایت را ثبت کن.</p>' + app[paragraph_end + len("</p>"):]
 replace_once(
     '<div className="auth-kicker">سامانه برگزاری آزمون آنلاین</div>',
     '<div className="auth-kicker">THINK CLEAR · COMPETE FAIR</div>',
