@@ -23,6 +23,7 @@ indent = m.group(1)
 s = s[:m.end()] + "\n" + indent + "const isDesigner = profile?.role === 'designer'\n" + indent + "const canManageContests = isAdmin || isDesigner" + s[m.end():]
 
 s = s.replace("const changeUserRole = async (userId: string, role: 'participant' | 'admin') => {", "const changeUserRole = async (userId: string, role: 'participant' | 'designer' | 'admin') => {")
+s = s.replace("onSetRole: (userId: string, role: 'participant' | 'admin') => void", "onSetRole: (userId: string, role: 'participant' | 'designer' | 'admin') => void")
 s = s.replace("supabase.rpc('edit_exam_with_answer_key', {", "supabase.rpc(isDesigner && !isAdmin ? 'designer_edit_exam_with_answer_key' : 'edit_exam_with_answer_key', {")
 s = s.replace("supabase.rpc('create_exam_with_answer_key', {", "supabase.rpc(isDesigner && !isAdmin ? 'designer_create_exam_with_answer_key' : 'create_exam_with_answer_key', {")
 s = s.replace("supabase.rpc('set_exam_question_resource', {", "supabase.rpc(isDesigner && !isAdmin ? 'designer_set_exam_question_resource' : 'set_exam_question_resource', {")
