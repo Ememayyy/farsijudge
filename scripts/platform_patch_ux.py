@@ -245,15 +245,25 @@ once(
 """title: string; description: string; tagsText: string; onTagsText: (value: string) => void; start: string; duration: string; questions: AdminQuestion[]; busy: boolean;""",
 "admin tag prop types"
 )
-once(
-"""          <label className="field-label">توضیحات کوتاه <small>(اختیاری)</small><textarea value={description} onChange={(e) => onDescription(e.target.value)} placeholder="توضیحات یا دستورالعمل آزمون" rows={2} /></label>""",
-"""          <label className="field-label">توضیحات کوتاه <small>(اختیاری)</small><textarea value={description} onChange={(e) => onDescription(e.target.value)} placeholder="توضیحات یا دستورالعمل آزمون" rows={2} /></label>
+admin_start = s.index("function AdminPage(")
+admin_end = s.index("\nfunction ProfilePage(", admin_start)
+admin = s[admin_start:admin_end]
+description_index = admin.find("توضیحات کوتاه")
+if description_index < 0:
+    raise SystemExit("Admin form description field was not found.")
+label_start = admin.rfind("<label", 0, description_index)
+label_end = admin.find("</label>", description_index)
+if label_start < 0 or label_end < 0:
+    raise SystemExit("Could not isolate the admin description field.")
+label_end += len("</label>")
+tag_field = """
           <label className="field-label">تگ‌های موضوعی مسابقه
             <input value={tagsText} onChange={(e) => onTagsText(e.target.value)} placeholder="مثلاً ترکیبیات، گراف، الگوریتم" />
             <small>تگ‌ها را با ویرگول جدا کن؛ رنگ هر تگ به‌صورت خودکار انتخاب می‌شود.</small>
-          </label>""",
-"admin create form topic tags"
-)
+          </label>"""
+if "تگ‌های موضوعی مسابقه" not in admin:
+    admin = admin[:label_end] + tag_field + admin[label_end:]
+    s = s[:admin_start] + admin + s[admin_end:]
 once(
 "questionFile={questionFile}",
 "questionFile={questionFile} tagsText={adminTags} onTagsText={setAdminTags}",
