@@ -20,6 +20,10 @@ source, public_marks = re.subn(
     source,
 )
 
+# Preserve the legacy data-URL declaration without leaving an unused-local error.
+if re.search(r"\bbrandLogo\b", source) and "src={brandLogo}" not in source:
+    source += chr(10) + "void brandLogo;" + chr(10)
+
 app_path.write_text(source, encoding="utf-8")
 
 css_path = Path("src/style.css")
