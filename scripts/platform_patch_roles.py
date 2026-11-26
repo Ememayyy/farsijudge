@@ -57,12 +57,19 @@ s = s.replace(
           {p.role === 'participant' && <button className="button soft small" onClick={() => onSetRole(p.id, 'designer')}>تبدیل به طراح</button>}
           {p.role !== 'admin' && <button className="button soft small" onClick={() => onSetRole(p.id, 'admin')}>ارتقای مدیر</button>}"""
 )
-# Close the designer-only conditional.
-s = s.replace(
-    "</div></div>\n    </section>\n  </>\n}\n\nfunction TeamPage",
-    "</div></div>\n    </section>}\n  </>\n}\n\nfunction TeamPage",
-    1
-)
+# Close the designer-only conditional at the actual end of the user panel.
+admin_start = s.index("function AdminPage(")
+admin_end = s.index("\\nfunction ProfilePage(", admin_start)
+admin = s[admin_start:admin_end]
+users_start = admin.find('<section className="panel-card admin-users">')
+if users_start >= 0:
+    users_end = admin.find("</section>", users_start)
+    if users_end < 0:
+        raise SystemExit("Admin user panel closing tag not found")
+    users_end += len("</section>")
+    if admin[users_end:users_end + 1] != "}":
+        admin = admin[:users_end] + "}" + admin[users_end:]
+    s = s[:admin_start] + admin + s[admin_end:]
 
 # Designers edit only their own contests, and do not receive the global user/results lists.
 s = s.replace(
