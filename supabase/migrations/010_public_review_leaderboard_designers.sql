@@ -376,6 +376,36 @@ using (
   )
 );
 
+-- Designers must be able to reopen and edit the questions, answer keys and
+-- uploaded resource belonging to their own contests.
+drop policy if exists "designers_read_own_exam_questions" on public.exam_questions;
+create policy "designers_read_own_exam_questions"
+on public.exam_questions for select to authenticated
+using ((select public.can_manage_exam(exam_id)));
+
+drop policy if exists "designers_read_own_answer_keys" on public.exam_answer_keys;
+create policy "designers_read_own_answer_keys"
+on public.exam_answer_keys for select to authenticated
+using ((select public.can_manage_exam(exam_id)));
+
+drop policy if exists "designers_read_own_question_resources" on public.exam_question_resources;
+create policy "designers_read_own_question_resources"
+on public.exam_question_resources for select to authenticated
+using ((select public.can_manage_exam(exam_id)));
+
+drop policy if exists "designers_read_own_question_files" on storage.objects;
+create policy "designers_read_own_question_files"
+on storage.objects for select to authenticated
+using (
+  bucket_id = 'exam-question-files'
+  and (select public.is_contest_designer())
+  and exists (
+    select 1 from public.exams e
+    where e.id::text = split_part(storage.objects.name, '/', 1)
+      and e.created_by = (select auth.uid())
+  )
+);
+
 -- Public question access is deliberately read-only and begins only after
 -- the contest end time. The private bucket stays private.
 create or replace function public.get_public_exam_question_resource(p_exam_id uuid)
