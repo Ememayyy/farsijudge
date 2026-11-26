@@ -405,12 +405,20 @@ insert = """  const saveUsername = async (event: FormEvent) => {
   }
 
   const respondToInvitation = async (id: string, accept: boolean) => {
-    if (!supabase) return
-    const { error } = await supabase.rpc('respond_team_invitation', { p_invitation_id: id, p_accept: accept })
-    if (error) notify('ثبت پاسخ دعوت‌نامه ناموفق بود: ' + error.message, 'error')
-    else {
+    if (!supabase || teamBusy) return
+    setTeamBusy(true)
+    try {
+      const { error } = await supabase.rpc('respond_team_invitation', { p_invitation_id: id, p_accept: accept })
+      if (error) {
+        notify('ثبت پاسخ دعوت‌نامه ناموفق بود: ' + error.message, 'error')
+        return
+      }
       notify(accept ? 'به تیم اضافه شدید.' : 'دعوت‌نامه رد شد.', 'success')
       await loadMainData()
+    } catch (cause) {
+      notify('ارتباط با سرور برای ثبت پاسخ دعوت‌نامه ناموفق بود: ' + (cause instanceof Error ? cause.message : String(cause)), 'error')
+    } finally {
+      setTeamBusy(false)
     }
   }
 
@@ -801,7 +809,7 @@ team_component = """function TeamPage({ team, members, invitations, teamName, in
       <form className="team-create-form" onSubmit={onCreate}><label className="field-label">نام تیم<input value={teamName} onChange={(e) => onTeamName(e.target.value)} placeholder="مثلاً تیم ترکیبیات" maxLength={40} /></label><button className="button primary" disabled={busy || teamName.trim().length < 2} type="submit"><Users size={16} />ساخت تیم و کاپیتان شدن</button></form>
     </section>}
     <section className="panel-card team-panel"><div className="panel-title"><div><h2>دعوت‌نامه‌های دریافتی</h2><p>برای عضویت در تیم، دعوت‌نامه باید پذیرفته شود.</p></div></div>
-      {invitations.length === 0 ? <div className="mini-empty">دعوت‌نامه فعالی ندارید.</div> : <div className="team-member-list">{invitations.map((inv) => <div className="team-member-row" key={inv.id}><div className="admin-exam-copy"><b>{inv.teams?.name || 'تیم جدید'}</b><small>{dateText(inv.created_at)}</small></div><div className="team-invitation-actions"><button className="button primary small" onClick={() => onRespond(inv.id, true)}>پذیرفتن</button><button className="button soft small" onClick={() => onRespond(inv.id, false)}>رد کردن</button></div></div>)}</div>}
+      {invitations.length === 0 ? <div className="mini-empty">دعوت‌نامه فعالی ندارید.</div> : <div className="team-member-list">{invitations.map((inv) => <div className="team-member-row" key={inv.id}><div className="admin-exam-copy"><b>{inv.teams?.name || 'تیم جدید'}</b><small>{dateText(inv.created_at)}</small></div><div className="team-invitation-actions"><button type="button" className="button primary small" disabled={busy} onClick={() => onRespond(inv.id, true)}>{busy ? 'در حال ثبت...' : 'پذیرفتن'}</button><button type="button" className="button soft small" disabled={busy} onClick={() => onRespond(inv.id, false)}>رد کردن</button></div></div>)}</div>}
     </section>
   </>
 }
