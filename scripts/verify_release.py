@@ -147,7 +147,7 @@ if APP.is_file():
           "Public review buttons must navigate through the root route callbacks.")
     check("function ContestTagList(" in app and "function getContestTagTone(" in app,
           "Colored contest tag rendering is missing.")
-    check("exam-card--" in app, "Contest cards are not styled from their first topic tag.")
+    check("oj-contest-row" in app and ".oj-contest-row" in (ROOT / "src" / "style.css").read_text(encoding="utf-8"), "Contest directory rows are missing their new layout styling.")
     full_redesign_css = (ROOT / "src" / "style.css").read_text(encoding="utf-8")
     for layout_contract in (".oj-public-home", ".oj-public-header", ".oj-dashboard", ".oj-contest-row", ".oj-app-shell .sidebar", ".auth-shell", ".oj-app-shell .exam-heading-panel", "@media(max-width:700px)"):
         check(layout_contract in full_redesign_css, f"Full redesign responsive layout is missing: {layout_contract}.")
@@ -163,7 +163,7 @@ if APP.is_file():
     ):
         check(visual_contract in (ROOT / "src" / "style.css").read_text(encoding="utf-8"),
               f"Visual refresh contract is missing: {visual_contract}.")
-    check("ایده‌هایت را به" in app, "The redesigned public landing headline is missing.")
+    check("فکر کن. حل کن." in app and "رتبه‌ات را بساز." in app, "The new contest hub headline is missing.")
     check("هر مسئله،" in app, "The redesigned authentication headline is missing.")
 
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
