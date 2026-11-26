@@ -31,7 +31,7 @@ jobs:
           node-version: 22
 
       - name: Install PWA icon tooling
-        run: python3 -m pip install --user --quiet --break-system-packages Pillow CairoSVG
+        run: python3 -m pip install --user --quiet --break-system-packages Pillow CairoSVG pglast
 
       - name: Check Supabase configuration
         run: |
@@ -53,7 +53,7 @@ jobs:
       - name: Apply auth, branding, and admin setup
         run: |
           patch -p1 < farsijudge-ui-auth.patch
-          sed -i 's/آزمون‌یار/فارسی جاج/g; s/سامانه آزمون آنلاین/سامانه برگزاری مسابقه آنلاین/g' farsijudge/index.html
+          sed -i 's/آزمون‌یار/فارسی جاج/g; s/سامانه آزمون آنلاین/سامانه برگزاری مسابقه آنلاین/g; s|/farsijudge/farsijudge-logo.webp|./fj-logo.svg|g' farsijudge/index.html
           python3 scripts/patch_typescript.py
           mkdir -p farsijudge/scripts
           cp scripts/feature_patch.py farsijudge/scripts/feature_patch.py
@@ -97,6 +97,12 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+
+      - name: Verify release artifacts and database contracts
+        run: python3 scripts/verify_release.py
+        env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          REQUIRE_PGLAST: "1"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
