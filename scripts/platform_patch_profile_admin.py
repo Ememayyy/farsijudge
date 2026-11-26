@@ -15,6 +15,10 @@ if "ProfileSettings profile={profile}" not in s:
     profile_start = s.find("<ProfilePage")
     profile_end = s.find("/>", profile_start)
     if profile_start < 0 or profile_end < 0:
+        print("PROFILE_RENDER_DEBUG:")
+        for line in s.splitlines():
+            if "profile" in line.lower() or "Profile" in line:
+                print(line[:500])
         raise SystemExit("ProfilePage JSX element not found")
     profile_end += 2
     s = s[:profile_end] + "<ProfileSettings profile={profile} />" + s[profile_end:]
