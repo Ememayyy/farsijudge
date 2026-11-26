@@ -13,7 +13,7 @@ def once(old, new, label):
 # Designer is a distinct profile role and can manage only contests it owns.
 s = s.replace("role: 'participant' | 'admin'; username?: string", "role: 'participant' | 'designer' | 'admin'; username?: string")
 s = s.replace("type Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team'", "type Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team' | 'leaderboard' | 'public-questions'")
-s = s.replace("  is_published: boolean\n  question_pdf_url?: string | null", "  is_published: boolean\n  created_by?: string | null\n  end_at_override?: string | null\n  question_pdf_url?: string | null")
+s = s.replace("  is_published: boolean\n  question_pdf_url?: string | null", "  is_published: boolean\n  created_by?: string | null\n  question_pdf_url?: string | null")
 s = s.replace("select('id,title,description,starts_at,duration_minutes,is_published,created_at')", "select('id,title,description,starts_at,duration_minutes,is_published,created_at,created_by,end_at_override')")
 s = s.replace("results_release_at,announcement,tags,created_at'", "results_release_at,announcement,tags,created_at,created_by'")
 
