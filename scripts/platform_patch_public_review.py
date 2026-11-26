@@ -208,6 +208,9 @@ if s.count("function ProfilePage(") != 1:
     raise SystemExit("ProfilePage insertion point mismatch")
 s = s.replace("function ProfilePage(", components + chr(10) + "function ProfilePage(", 1)
 
+# The upcoming-contest date was replaced by a count in the public summary.
+s = s.replace("  const nextContest = publicExams.find((exam) => getStatus(exam, now) === 'upcoming')\n", "")
+
 p.write_text(s, encoding="utf-8")
 
 cssp = Path("src/style.css")
