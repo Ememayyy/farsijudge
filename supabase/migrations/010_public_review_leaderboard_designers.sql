@@ -385,6 +385,38 @@ $$;
 revoke all on function public.designer_update_contest_controls(uuid, timestamptz, boolean, timestamptz, timestamptz, text, text[]) from public, anon;
 grant execute on function public.designer_update_contest_controls(uuid, timestamptz, boolean, timestamptz, timestamptz, text, text[]) to authenticated;
 
+-- Expose only the pending-invitation count to the current team captain.
+-- This avoids granting access to invitation rows created by other captains.
+create or replace function public.get_my_team_pending_invitation_count(p_team_id uuid)
+returns bigint
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $
+declare
+  v_count bigint;
+begin
+  if not exists (
+    select 1
+    from public.team_members tm
+    where tm.team_id = p_team_id
+      and tm.user_id = (select auth.uid())
+      and tm.role = 'captain'
+  ) then
+    raise exception 'فقط کاپیتان همان تیم می‌تواند تعداد دعوت‌های در انتظار را ببیند.';
+  end if;
+
+  select count(*) into v_count
+  from public.team_invitations ti
+  where ti.team_id = p_team_id and ti.status = 'pending';
+
+  return coalesce(v_count, 0);
+end;
+$;
+revoke all on function public.get_my_team_pending_invitation_count(uuid) from public, anon;
+grant execute on function public.get_my_team_pending_invitation_count(uuid) to authenticated;
+
 -- Designers may upload only into the folder belonging to their own contest.
 drop policy if exists "designers_upload_own_question_files" on storage.objects;
 create policy "designers_upload_own_question_files"
