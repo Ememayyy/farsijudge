@@ -31,8 +31,9 @@ https://ememayyy.github.io/farsijudge/
 7. [008_contest_unregistration.sql](supabase/migrations/008_contest_unregistration.sql) — لغو ثبت‌نام در مسابقه.
 8. [009_restore_four_person_teams.sql](supabase/migrations/009_restore_four_person_teams.sql) — ظرفیت چهار نفر برای هر تیم، با احتساب کاپیتان.
 9. [010_public_review_leaderboard_designers.sql](supabase/migrations/010_public_review_leaderboard_designers.sql) — مشاهدهٔ عمومی سؤال‌ها و جدول امتیازات پس از مسابقه، و نقش طراح مسابقه.
+10. [011_problem_engine_foundation.sql](supabase/migrations/011_problem_engine_foundation.sql) — پایهٔ بانک سؤال مستقل، انواع پاسخ، اتصال سؤال به مسابقه، سابمیشن‌ها، اطلاعات تکمیلی پروفایل و تنظیمات نوع/امتیازدهی مسابقه.
 
-اگر migration شمارهٔ 010 را قبلاً با نسخهٔ قدیمی اجرا کرده‌ای و خطای `position` گرفته‌ای، فایل فعلی را کامل جایگزین و از ابتدا اجرا کن؛ نام ستون خروجی جدول امتیازات در نسخهٔ اصلاح‌شده `rank` است.
+Migrationهای جدید فقط بعد از موفقیت همهٔ migrationهای قبلی اجرا شوند. Migration شمارهٔ 011 ساختار نسل جدید را به‌صورت افزایشی اضافه می‌کند و جدول‌های قدیمی را حذف یا تبدیل نمی‌کند. اجرای GitHub Pages همچنان هیچ SQLای را خودکار روی Supabase اجرا نمی‌کند.
 
 ## مدیر کردن حساب مالک
 
