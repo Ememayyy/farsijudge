@@ -81,7 +81,7 @@ if users_start >= 0:
         raise SystemExit("Admin user panel closing tag not found")
     users_end += len("</section>")
     tail = admin[users_end:]
-    if not __import__("re").match(r"\\s*}", tail):
+    if not __import__("re").match(r"\s*}", tail):
         admin = admin[:users_end] + "}" + admin[users_end:]
     s = s[:admin_start] + admin + s[admin_end:]
 
