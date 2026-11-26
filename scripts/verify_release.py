@@ -129,6 +129,8 @@ if APP.is_file():
     check("از ۴ عضو" in app or "از 4 عضو" in app, "Team capacity label does not advertise four people.")
     check(not re.search(r"team\.role\s*===\s*['\"]captain['\"]\s*&&\s*members\.length\s*<\s*3", app),
           "A stale three-person team limit remains in the UI.")
+    check("onSetRole(p.id, 'designer')" in app, "Administrator UI is missing the control to assign designer role.")
+    check("طراح مسابقه" in app, "Designer role label is missing from the administrator UI.")
 
 migration_path = MIGRATIONS / "010_public_review_leaderboard_designers.sql"
 check(migration_path.is_file(), "Migration 010 is missing from the built source tree.")
