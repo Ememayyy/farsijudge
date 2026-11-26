@@ -127,6 +127,8 @@ jobs:
             artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[]? | select(.name == "github-pages-${{ github.run_number }}-${{ github.run_attempt }}") | .id' | head -n 1)
             if [ -n "$artifact_id" ]; then
               echo "Pages artifact is visible: $artifact_id"
+              # The Pages deployment API can lag behind the Actions artifact API.
+              sleep 10
               exit 0
             fi
             echo "Pages artifact not visible yet (attempt $attempt/30)"
