@@ -278,17 +278,24 @@ once(
     let filePath = questionFilePath""",
 "normalize contest tags"
 )
-once(
-"else notify('آزمون و پاسخ‌نامه با موفقیت ویرایش شدند.', 'success')",
-"""else {
-          const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', editingExamId)
-          if (tagError) {
-            notify('آزمون ویرایش شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
-            failed = true
-          } else notify('آزمون، پاسخ‌نامه و تگ‌ها با موفقیت ویرایش شدند.', 'success')
-        }""",
-"persist edited contest tags"
-)
+# Persist edited tags once the normal exam/question edit succeeded.
+create_start = s.index("  const createExam = async (event: FormEvent) => {")
+create_end = s.index("\n  const changeQuestionCount", create_start)
+create_block = s[create_start:create_end]
+cleanup_anchor = "    if (!failed) {"
+if create_block.count(cleanup_anchor) != 1:
+    raise SystemExit("Admin create/edit cleanup anchor mismatch.")
+edit_tag_persist = """    if (!failed && editingExamId) {
+      const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', editingExamId)
+      if (tagError) {
+        notify('آزمون ویرایش شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
+        failed = true
+      }
+    }
+
+"""
+create_block = create_block.replace(cleanup_anchor, edit_tag_persist + cleanup_anchor, 1)
+s = s[:create_start] + create_block + s[create_end:]
 once(
 """        examId = data as string
         if (questionFile && examId) {""",
