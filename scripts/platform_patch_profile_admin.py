@@ -11,11 +11,13 @@ def once(old, new, label):
     s = s.replace(old, new, 1)
 
 # Add display-name and password forms to the existing profile page.
-once(
-    "{page === 'profile' && <ProfilePage profile={profile} email={session?.user.email || (isDemo ? demoUser.email : '')} exams={exams} />}",
-    "{page === 'profile' && <><ProfilePage profile={profile} email={session?.user.email || (isDemo ? demoUser.email : '')} exams={exams} /><ProfileSettings profile={profile} /></>}",
-    "profile settings render"
-)
+if "ProfileSettings profile={profile}" not in s:
+    import re
+    profile_render = re.search(r"<ProfilePage\\b[^>]*/>", s)
+    if not profile_render:
+        raise SystemExit("ProfilePage JSX element not found")
+    tag = profile_render.group(0)
+    s = s[:profile_render.end()] + "<ProfileSettings profile={profile} />" + s[profile_render.end():]
 
 profile_component = """
 function ProfileSettings({ profile }: { profile: Profile | null }) {
