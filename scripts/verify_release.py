@@ -143,6 +143,9 @@ if APP.is_file():
           "Public review buttons must navigate through the root route callbacks.")
     check("function ContestTagList(" in app and "function getContestTagTone(" in app,
           "Colored contest tag rendering is missing.")
+    check("exam-card--" in app, "Contest cards are not styled from their first topic tag.")
+    check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
+          "Contest designer is missing quick topic presets.")
     for tag in ("combinatorics", "algorithm", "programming", "graph", "algebra", "geometry"):
         check(f"return '{tag}'" in app, f"Contest tag color mapping is missing: {tag}.")
     check("tagsText={adminTags}" in app and "onTagsText={setAdminTags}" in app,
