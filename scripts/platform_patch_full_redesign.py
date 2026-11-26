@@ -80,7 +80,7 @@ function Dashboard({ exams, profile, now, onOpen, onAdmin, isAdmin, isDemo, myRe
   </div>
 }
 '''
-app = replace_region(app, "function Dashboard(", "\nfunction ClipboardIcon(", dashboard, "Dashboard component")
+app = replace_region(app, "function Dashboard(", "\nfunction StatusBadge(", dashboard, "Dashboard component")
 
 welcome = r'''
 function WelcomePage({ theme, onToggleTheme, onLogin, onRegister, onDemo, showDemo, exams, now, onReviewQuestions, onLeaderboard }: {
