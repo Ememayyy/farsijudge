@@ -139,6 +139,10 @@ if APP.is_file():
           "Auth listener must not reset the current route when a session is refreshed.")
     check("setSelectedPublicExam" in app and "page === 'public-questions'" in app and "page === 'leaderboard'" in app,
           "Public review pages must use the top-level route state.")
+    check("farsijudge-route" in app and "routeSnapshotReady" in app,
+          "Active route and selected contest must survive tab suspension or reload.")
+    check("current === 'welcome' || current === 'auth' ? 'dashboard' : current" in app,
+          "Session hydration must not overwrite a restored in-app route.")
     check("onReviewQuestions(exam)" in app and "onLeaderboard(exam)" in app,
           "Public review buttons must navigate through the root route callbacks.")
     check("function ContestTagList(" in app and "function getContestTagTone(" in app,
