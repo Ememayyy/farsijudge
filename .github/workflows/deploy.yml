@@ -86,18 +86,6 @@ jobs:
           cp supabase/migrations/010_public_review_leaderboard_designers.sql farsijudge/supabase/migrations/010_public_review_leaderboard_designers.sql
           cp supabase/email-templates/confirm-signup.html farsijudge/supabase/email-templates/confirm-signup.html
 
-      - name: Debug patched role JSX
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          lines = Path('farsijudge/src/App.tsx').read_text(encoding='utf-8').splitlines()
-          for n in range(1716, min(1722, len(lines) + 1)):
-              line = lines[n - 1]
-              print(f'{n}: {line}')
-              if n == 1718:
-                  print('AROUND_ERROR:', line[800:1100])
-          PY
-
       - name: Install dependencies
         working-directory: ./farsijudge
         run: npm install --no-audit --no-fund
