@@ -284,6 +284,13 @@ if "navigator.serviceWorker.register('./sw.js')" not in html:
     if "</body>" not in html:
         raise SystemExit("Could not find </body> in index.html")
     html = html.replace("</body>", worker_registration + "</body>", 1)
+# Replace the obsolete root-scoped WebP favicon after all source index edits.
+# The vector logo is shipped by the build and works under the GitHub Pages base path.
+html = html.replace(
+    '<link rel="icon" type="image/webp" href="/farsijudge/farsijudge-logo.webp" />',
+    '<link rel="icon" type="image/svg+xml" href="./fj-logo.svg" />',
+)
+html = html.replace("/farsijudge/farsijudge-logo.webp", "./fj-logo.svg")
 index_path.write_text(html, encoding="utf-8")
 
 print("Applied mobile/dashboard/contest and PWA polish.")
