@@ -148,6 +148,11 @@ if APP.is_file():
     check("function ContestTagList(" in app and "function getContestTagTone(" in app,
           "Colored contest tag rendering is missing.")
     check("exam-card--" in app, "Contest cards are not styled from their first topic tag.")
+    full_redesign_css = (ROOT / "src" / "style.css").read_text(encoding="utf-8")
+    for layout_contract in (".oj-public-home", ".oj-public-header", ".oj-dashboard", ".oj-contest-row", ".oj-app-shell .sidebar", ".auth-shell", ".oj-app-shell .exam-heading-panel", "@media(max-width:700px)"):
+        check(layout_contract in full_redesign_css, f"Full redesign responsive layout is missing: {layout_contract}.")
+    for content_contract in ("CONTEST WORKSPACE", "فهرست مسابقه‌ها", "مسابقه‌های عمومی", "مسابقهٔ پیش‌رو"):
+        check(content_contract in app, f"Full redesign content contract is missing: {content_contract}.")
     for visual_contract in (
         "FARSIJUDGE VISUAL SYSTEM",
         ".public-hero h1",
