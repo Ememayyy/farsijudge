@@ -148,6 +148,19 @@ if APP.is_file():
     check("function ContestTagList(" in app and "function getContestTagTone(" in app,
           "Colored contest tag rendering is missing.")
     check("exam-card--" in app, "Contest cards are not styled from their first topic tag.")
+    for visual_contract in (
+        "FARSIJUDGE VISUAL SYSTEM",
+        ".public-hero h1",
+        ".auth-visual-content h1",
+        ".dashboard-hero",
+        ".redesign-shell .exam-info-grid",
+        "@media (prefers-reduced-motion: reduce)",
+    ):
+        check(visual_contract in (ROOT / "src" / "style.css").read_text(encoding="utf-8"),
+              f"Visual refresh contract is missing: {visual_contract}.")
+    check("ایده‌هایت را به" in app, "The redesigned public landing headline is missing.")
+    check("هر مسئله،" in app, "The redesigned authentication headline is missing.")
+
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
           "Contest designer is missing quick topic presets.")
     for tag in ("combinatorics", "algorithm", "programming", "graph", "algebra", "geometry"):
