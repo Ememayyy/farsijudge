@@ -146,7 +146,7 @@ once(
 "  const createExam = async (event: FormEvent) => {",
 """  const saveContestControls = async (values: AdminControlValues) => {
     if (!supabase) return
-    const { error } = await supabase.rpc('admin_update_contest_controls', {
+    const { error } = await supabase.rpc(isDesigner && !isAdmin ? 'designer_update_contest_controls' : 'admin_update_contest_controls', {
       p_exam_id: values.examId,
       p_end_at_override: values.endAt ? new Date(values.endAt).toISOString() : null,
       p_allow_late_registration: values.allowLate,
