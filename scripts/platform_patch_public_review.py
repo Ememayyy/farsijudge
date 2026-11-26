@@ -219,8 +219,7 @@ function PublicQuestionPage({ exam, onBack, onLeaderboard }: {
 '''
 if s.count("function ProfilePage(") != 1:
     raise SystemExit("ProfilePage insertion point mismatch")
-s = s.replace("function ProfilePage(", components + "
-function ProfilePage(", 1)
+s = s.replace("function ProfilePage(", components + chr(10) + "function ProfilePage(", 1)
 
 p.write_text(s, encoding="utf-8")
 
