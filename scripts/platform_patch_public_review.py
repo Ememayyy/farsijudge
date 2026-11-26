@@ -20,24 +20,26 @@ if "type LeaderboardRow =" not in s:
     s = s[:match.start()] + leaderboard_type + s[match.start():]
 
 # --- Public landing page ---
-# WelcomePage is rendered inside the root shell. Keep review state local so it
-# works without an account and does not depend on authenticated page routing.
-welcome_anchor = """  const publicExams = exams.filter((exam) => exam.is_published).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
-  const nextContest = publicExams.find((exam) => getStatus(exam, now) === 'upcoming')
-  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length
-  return <div className="public-site">"""
-welcome_new = """  const publicExams = exams.filter((exam) => exam.is_published).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
-  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length
-  const upcomingCount = publicExams.filter((exam) => getStatus(exam, now) === 'upcoming').length
+# Locate the actual generated WelcomePage by function boundaries instead of
+# relying on exact whitespace in the source template.
+welcome_start = s.index("function WelcomePage(")
+welcome_end = s.index("\\nfunction RegistrationPage(", welcome_start)
+welcome = s[welcome_start:welcome_end]
+return_marker = '  return <div className="public-site">'
+return_pos = welcome.find(return_marker)
+if return_pos < 0:
+    raise SystemExit("WelcomePage public layout return not found")
+state_block = """  const upcomingCount = publicExams.filter((exam) => getStatus(exam, now) === 'upcoming').length
   const endedCount = publicExams.filter((exam) => getStatus(exam, now) === 'ended').length
   const [reviewExam, setReviewExam] = useState<Exam | null>(null)
   const [leaderboardExam, setLeaderboardExam] = useState<Exam | null>(null)
   if (leaderboardExam) return <PublicLeaderboardPage exam={leaderboardExam} onBack={() => setLeaderboardExam(null)} />
   if (reviewExam) return <PublicQuestionPage exam={reviewExam} onBack={() => setReviewExam(null)} onLeaderboard={() => setLeaderboardExam(reviewExam)} />
-  return <div className="public-site">"""
-once(welcome_anchor, welcome_new, "public landing review state")
+"""
+welcome = welcome[:return_pos] + state_block + welcome[return_pos:]
+s = s[:welcome_start] + welcome + s[welcome_end:]
 
-# Ended contests offer public question review and public leaderboard links.
+# Ended contests offer public question review and leaderboard links.
 once(
     """<td><button className="public-row-action" onClick={onLogin}>جزئیات <ChevronLeft size={14} /></button></td>""",
     """<td className="public-row-actions">
@@ -48,7 +50,7 @@ once(
     "public contest ended actions"
 )
 
-# Use reliable state counts rather than the old next-contest date summary.
+# Use accurate state counts in the public summary while retaining the live card.
 once(
     """            <div className="public-stat-foot"><span>مسابقه‌های منتشرشده</span><strong>{fa(publicExams.length)}</strong></div>
             <div className="public-stat-foot"><span>مسابقهٔ پیش‌رو</span><strong>{nextContest ? dateText(nextContest.starts_at) : 'به‌زودی'}</strong></div>""",
