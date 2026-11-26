@@ -526,6 +526,7 @@ source = source[:start] + """  const createExam = async (event: FormEvent) => {
 
     setAdminBusy(true)
     let examId = editingExamId
+    const normalizedExamTags = Array.from(new Set(adminTags.split(',').map((tag) => tag.trim().slice(0, 32)).filter(Boolean))).slice(0, 6)
     let filePath = questionFilePath
     if (questionPdfUrl.trim() && !questionFile) filePath = null
     let failed = false
@@ -554,7 +555,13 @@ source = source[:start] + """  const createExam = async (event: FormEvent) => {
         if (error) {
           notify('ویرایش آزمون ناموفق بود: ' + error.message, 'error')
           failed = true
-        } else notify('آزمون و پاسخ‌نامه با موفقیت ویرایش شدند.', 'success')
+        } else {
+          const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', editingExamId)
+          if (tagError) {
+            notify('آزمون ویرایش شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
+            failed = true
+          } else notify('آزمون، پاسخ‌نامه و تگ‌ها با موفقیت ویرایش شدند.', 'success')
+        }
       }
     } else {
       const { data, error } = await supabase.rpc('create_exam_with_answer_key', {
@@ -569,7 +576,14 @@ source = source[:start] + """  const createExam = async (event: FormEvent) => {
         failed = true
       } else {
         examId = data as string
-        if (questionFile && examId) {
+        if (examId) {
+          const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', examId)
+          if (tagError) {
+            notify('آزمون ساخته شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
+            failed = true
+          }
+        }
+        if (!failed && questionFile && examId) {
           const safeName = questionFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
           filePath = examId + '/' + Date.now() + '-' + safeName
           const { error: uploadError } = await supabase.storage.from('exam-question-files').upload(filePath, questionFile, { upsert: true, contentType: 'application/pdf' })
