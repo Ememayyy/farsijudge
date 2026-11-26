@@ -110,6 +110,7 @@ for required in (
     "designer_create_exam_with_answer_key",
     "designer_edit_exam_with_answer_key",
     "designer_update_contest_controls",
+    "get_my_team_pending_invitation_count",
     "update_my_display_name",
 ):
     check(required in bundle, f"Built frontend is missing expected RPC contract: {required}")
@@ -125,7 +126,7 @@ for js_path in js_files:
 
 if APP.is_file():
     app = APP.read_text(encoding="utf-8")
-    check("team.role === 'captain' && members.length + invitations.filter((invitation) => invitation.status === 'pending').length < 4" in app,
+    check("team.role === 'captain' && members.length + pendingInvitationCount < 4" in app,
           "Team invitation UI must count pending invitations toward its four-person capacity.")
     check("از ۴ عضو" in app or "از 4 عضو" in app, "Team capacity label does not advertise four people.")
     check(not re.search(r"team\.role\s*===\s*['\"]captain['\"]\s*&&\s*members\.length\s*<\s*3", app),
@@ -164,6 +165,8 @@ if migration_path.is_file():
               "Leaderboard no longer finalizes scores on access.")
     check("function public.designer_update_contest_controls" in sql,
           "Migration 010 is missing owner-scoped designer contest controls.")
+    check("function public.get_my_team_pending_invitation_count" in sql,
+          "Migration 010 is missing the secure team pending-invitation count RPC.")
 
 # Parse every SQL migration with PostgreSQL's grammar parser in CI.
 try:
