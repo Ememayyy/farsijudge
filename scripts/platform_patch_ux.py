@@ -282,42 +282,9 @@ once(
 "admin tag props at route"
 )
 
-once(
-"""    let examId = editingExamId
-    let filePath = questionFilePath""",
-"""    let examId = editingExamId
-    const normalizedExamTags = Array.from(new Set(adminTags.split(',').map((tag) => tag.trim().slice(0, 32)).filter(Boolean))).slice(0, 6)
-    let filePath = questionFilePath""",
-"normalize contest tags"
-)
-# Persist edited tags once the normal exam/question edit succeeded.
-create_start = s.index("  const createExam = async (event: FormEvent) => {")
-create_end = s.index("\n  const changeQuestionCount", create_start)
-create_block = s[create_start:create_end]
-cleanup_anchor = "      setAdminTitle('')"
-if create_block.count(cleanup_anchor) != 1:
-    raise SystemExit("Admin create/edit reset-field anchor mismatch.")
-edit_tag_persist = """      if (editingExamId) {
-        const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', editingExamId)
-        if (tagError) notify('آزمون ویرایش شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
-      }
-"""
-create_block = create_block.replace(cleanup_anchor, edit_tag_persist + cleanup_anchor, 1)
-s = s[:create_start] + create_block + s[create_end:]
-once(
-"""        examId = data as string
-        if (questionFile && examId) {""",
-"""        examId = data as string
-        if (examId) {
-          const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', examId)
-          if (tagError) {
-            notify('آزمون ساخته شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
-            failed = true
-          }
-        }
-        if (!failed && questionFile && examId) {""",
-"persist new contest tags"
-)
+
+
+
 once(
 "setAdminDescription('')",
 "setAdminDescription('')\n      setAdminTags('')",
