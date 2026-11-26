@@ -65,6 +65,62 @@ once(
 
 # Public visitors and signed-in users use the same public contest review entry points.
 
+
+# Signed-in dashboards also expose the same public review and score pages.
+dashboard_search = "  const [search, setSearch] = useState('')"
+once(
+    dashboard_search,
+    dashboard_search + "\n  const [leaderboardExam, setLeaderboardExam] = useState<Exam | null>(null)\n  const [reviewExam, setReviewExam] = useState<Exam | null>(null)",
+    "dashboard public review state"
+)
+dashboard_first_name = "  const firstName = profile?.full_name?.trim().split(/\\s+/)[0] || 'خوش آمدید'"
+once(
+    dashboard_first_name,
+    dashboard_first_name + "\n  if (leaderboardExam) return <PublicLeaderboardPage exam={leaderboardExam} onBack={() => setLeaderboardExam(null)} />\n  if (reviewExam) return <PublicQuestionPage exam={reviewExam} onBack={() => setReviewExam(null)} onLeaderboard={() => setLeaderboardExam(reviewExam)} />",
+    "dashboard public review routes"
+)
+
+# Add the two review actions to the base ExamCard component.
+card_start = s.index("function ExamCard(")
+card_end = s.index("\nfunction StatusBadge(", card_start)
+card = s[card_start:card_end]
+match = re.search(r"function ExamCard\(\{([^}]*)\}\s*:\s*\{", card)
+if not match:
+    raise SystemExit("ExamCard component declaration not found")
+params = match.group(1)
+if "onReviewQuestions" not in params:
+    card = card[:match.start(1)] + params.rstrip() + ", onReviewQuestions, onLeaderboard" + card[match.end(1):]
+if "onReviewQuestions: () => void" not in card:
+    card = card.replace(
+        "onRegister: () => void",
+        "onRegister: () => void; onReviewQuestions: () => void; onLeaderboard: () => void",
+        1
+    )
+card_actions_end = '      </button>\n    </div>\n    <div className="exam-card-bottom">'
+if card_actions_end not in card:
+    raise SystemExit("ExamCard action section not found")
+card = card.replace(
+    card_actions_end,
+    '      </button>\n      {ended && <><button className="button soft small leaderboard-card-link" onClick={onReviewQuestions}><FileUp size={14} />صورت سؤال</button><button className="button soft small leaderboard-card-link" onClick={onLeaderboard}><Trophy size={14} />جدول امتیازات</button></>}\n    </div>\n    <div className="exam-card-bottom">',
+    1
+)
+s = s[:card_start] + card + s[card_end:]
+
+# Find the single ExamCard element in Dashboard, which may span multiple lines.
+dashboard_start = s.index("function Dashboard(")
+exam_card_start = s.find("<ExamCard", dashboard_start)
+if exam_card_start < 0:
+    raise SystemExit("Dashboard ExamCard element not found")
+exam_card_end = s.find("/>", exam_card_start)
+if exam_card_end < 0:
+    raise SystemExit("Dashboard ExamCard closing marker not found")
+tag = s[exam_card_start:exam_card_end]
+m = re.search(r"(onRegister=\{[^}]*\})", tag)
+if not m:
+    raise SystemExit("Dashboard ExamCard registration prop not found")
+tag = tag[:m.end()] + " onReviewQuestions={() => setReviewExam(exam)} onLeaderboard={() => setLeaderboardExam(exam)}" + tag[m.end():]
+s = s[:exam_card_start] + tag + s[exam_card_end:]
+
 # --- Public review components ---
 components = r'''
 function PublicLeaderboardPage({ exam, onBack }: { exam: Exam; onBack: () => void }) {
