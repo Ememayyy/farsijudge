@@ -13,10 +13,10 @@ def once(old, new, label):
 # Shared row type for the public leaderboard.
 import re
 if "type LeaderboardRow =" not in s:
-    match = re.search(r"^type Page\\b", s, re.M)
+    match = re.search(r"^type Page\b", s, re.M)
     if not match:
         raise SystemExit("Page type declaration not found")
-    leaderboard_type = "type LeaderboardRow = { position: number; display_name: string; team_name: string | null; score: number; max_score: number; correct_count: number; wrong_count: number; question_count: number; is_team: boolean }\\n"
+    leaderboard_type = "type LeaderboardRow = { position: number; display_name: string; team_name: string | null; score: number; max_score: number; correct_count: number; wrong_count: number; question_count: number; is_team: boolean }\n"
     s = s[:match.start()] + leaderboard_type + s[match.start():]
 
 # --- Public landing page ---
