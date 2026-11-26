@@ -59,7 +59,7 @@ if type_end < 0:
     raise SystemExit("AdminPage props type closing boundary not found")
 type_block = admin[head_end:type_end]
 if "designerMode:" not in type_block:
-    type_block += "\\n  designerMode: boolean"
+    type_block += "\n  designerMode: boolean"
 body = admin[type_end:]
 admin = head + type_block + body
 admin = admin.replace("isDesigner && !isAdmin", "designerMode")
