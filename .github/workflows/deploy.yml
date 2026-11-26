@@ -65,9 +65,12 @@ jobs:
           cp scripts/platform_patch_sidebar.py farsijudge/scripts/platform_patch_sidebar.py
           cp scripts/platform_patch_admin_files.py farsijudge/scripts/platform_patch_admin_files.py
           cp scripts/platform_patch_branding.py farsijudge/scripts/platform_patch_branding.py
+          cp scripts/platform_patch_roles.py farsijudge/scripts/platform_patch_roles.py
+          cp scripts/platform_patch_public_review.py farsijudge/scripts/platform_patch_public_review.py
+          cp scripts/platform_patch_profile_admin.py farsijudge/scripts/platform_patch_profile_admin.py
           (cd farsijudge && python3 scripts/feature_patch.py && python3 scripts/platform_patch_clean.py && python3 scripts/platform_patch_actions.py && python3 scripts/platform_patch_requested.py && python3 scripts/platform_patch_redesign.py)
           mkdir -p farsijudge/public farsijudge/supabase/migrations farsijudge/supabase/email-templates
-          (cd farsijudge && python3 scripts/platform_patch_polish.py && python3 scripts/platform_patch_sidebar.py && python3 scripts/platform_patch_admin_files.py && python3 scripts/platform_patch_branding.py)
+          (cd farsijudge && python3 scripts/platform_patch_polish.py && python3 scripts/platform_patch_sidebar.py && python3 scripts/platform_patch_admin_files.py && python3 scripts/platform_patch_branding.py && python3 scripts/platform_patch_roles.py && python3 scripts/platform_patch_public_review.py && python3 scripts/platform_patch_profile_admin.py)
           cp README.md farsijudge/README.md
           cp supabase/promote-admin.sql farsijudge/supabase/promote-admin.sql
           cp supabase/auth-url-settings.md farsijudge/supabase/auth-url-settings.md
@@ -79,6 +82,7 @@ jobs:
           cp supabase/migrations/007_contest_participants.sql farsijudge/supabase/migrations/007_contest_participants.sql
           cp supabase/migrations/008_contest_unregistration.sql farsijudge/supabase/migrations/008_contest_unregistration.sql
           cp supabase/migrations/009_restore_four_person_teams.sql farsijudge/supabase/migrations/009_restore_four_person_teams.sql
+          cp supabase/migrations/010_public_review_leaderboard_designers.sql farsijudge/supabase/migrations/010_public_review_leaderboard_designers.sql
           cp supabase/email-templates/confirm-signup.html farsijudge/supabase/email-templates/confirm-signup.html
 
       - name: Install dependencies
