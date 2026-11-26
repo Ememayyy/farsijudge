@@ -119,20 +119,20 @@ s = s.replace(
     1
 )
 
-dashboard_start = s.index("function Dashboard(")
-dashboard_end = s.find("\nfunction ", dashboard_start + len("function Dashboard("))
-if dashboard_end < 0:
-    raise SystemExit("Dashboard end boundary not found")
-dashboard = s[dashboard_start:dashboard_end]
-old_call = "onRegister={() => onRegister(exam)} />"
-if old_call not in dashboard:
-    raise SystemExit("Dashboard ExamCard call not found")
-dashboard = dashboard.replace(
-    old_call,
-    "onRegister={() => onRegister(exam)} onReviewQuestions={() => setReviewExam(exam)} onLeaderboard={() => setLeaderboardExam(exam)} />",
+# Add both public actions to the single dashboard ExamCard instance.
+exam_card_call = re.search(
+    r"<ExamCard\\b[^>]*onRegister=\\{\\(\\)\\s*=>\\s*onRegister\\(exam\\)\\}[^>]*/>",
+    s
+)
+if not exam_card_call:
+    raise SystemExit("Dashboard ExamCard JSX element not found")
+card_tag = exam_card_call.group(0)
+card_tag = card_tag.replace(
+    "onRegister={() => onRegister(exam)}",
+    "onRegister={() => onRegister(exam)} onReviewQuestions={() => setReviewExam(exam)} onLeaderboard={() => setLeaderboardExam(exam)}",
     1
 )
-s = s[:dashboard_start] + dashboard + s[dashboard_end:]
+s = s[:exam_card_call.start()] + card_tag + s[exam_card_call.end():]
 
 # --- Public review components ---
 components = r'''
