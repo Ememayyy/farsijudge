@@ -469,7 +469,7 @@ grant execute on function public.get_public_exam_questions(uuid) to anon, authen
 -- team registration or individual registration, never one row per teammate.
 create or replace function public.get_public_exam_leaderboard(p_exam_id uuid)
 returns table(
-  position bigint,
+  rank bigint,
   display_name text,
   team_name text,
   score numeric,
@@ -536,7 +536,7 @@ begin
   select
     row_number() over (
       order by s.score desc, s.wrong_count asc, s.display_name collate "C" asc
-    ) as position,
+    ) as rank,
     s.display_name,
     s.team_name,
     s.score,
