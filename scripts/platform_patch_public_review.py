@@ -121,7 +121,7 @@ s = s.replace(
 
 # Add both public actions to the single dashboard ExamCard instance.
 exam_card_call = re.search(
-    r"<ExamCard\\b[^>]*onRegister=\\{\\(\\)\\s*=>\\s*onRegister\\(exam\\)\\}[^>]*/>",
+    r"<ExamCard\b[^>]*onRegister=\{\(\)\s*=>\s*onRegister\(exam\)\}[^>]*/>",
     s
 )
 if not exam_card_call:
