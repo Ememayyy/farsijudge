@@ -10,145 +10,144 @@ def once(old, new, label):
         raise SystemExit(label + ": expected one anchor, got " + str(n))
     s = s.replace(old, new, 1)
 
-# Shared public question and leaderboard routes.
-s = s.replace(
-    "type Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team' | 'leaderboard' | 'public-questions'",
-    "type LeaderboardRow = { position: number; display_name: string; team_name: string | null; score: number; max_score: number; correct_count: number; wrong_count: number; question_count: number; is_team: boolean }\ntype Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team' | 'leaderboard' | 'public-questions'"
-)
-once(
-    "  const [questionResourceUrl, setQuestionResourceUrl] = useState('')",
-    """  const [questionResourceUrl, setQuestionResourceUrl] = useState('')
+# Shared row type for the public leaderboard.
+page_line = "type Page = 'dashboard' | 'exam' | 'admin' | 'profile' | 'team' | 'leaderboard' | 'public-questions'"
+if "type LeaderboardRow =" not in s:
+    if page_line not in s:
+        raise SystemExit("Page type anchor missing")
+    s = s.replace(
+        page_line,
+        "type LeaderboardRow = { position: number; display_name: string; team_name: string | null; score: number; max_score: number; correct_count: number; wrong_count: number; question_count: number; is_team: boolean }\n" + page_line,
+        1
+    )
+
+# --- Public landing page ---
+# WelcomePage is rendered inside the root shell. Keep review state local so it
+# works without an account and does not depend on authenticated page routing.
+welcome_anchor = """  const publicExams = exams.filter((exam) => exam.is_published).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+  const nextContest = publicExams.find((exam) => getStatus(exam, now) === 'upcoming')
+  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length
+  return <div className="public-site">"""
+welcome_new = """  const publicExams = exams.filter((exam) => exam.is_published).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length
+  const upcomingCount = publicExams.filter((exam) => getStatus(exam, now) === 'upcoming').length
+  const endedCount = publicExams.filter((exam) => getStatus(exam, now) === 'ended').length
+  const [reviewExam, setReviewExam] = useState<Exam | null>(null)
   const [leaderboardExam, setLeaderboardExam] = useState<Exam | null>(null)
-  const [leaderboardRows, setLeaderboardRows] = useState<LeaderboardRow[]>([])
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false)""",
-    "public routes state"
-)
+  if (leaderboardExam) return <PublicLeaderboardPage exam={leaderboardExam} onBack={() => setLeaderboardExam(null)} />
+  if (reviewExam) return <PublicQuestionPage exam={reviewExam} onBack={() => setReviewExam(null)} onLeaderboard={() => setLeaderboardExam(reviewExam)} />
+  return <div className="public-site">"""
+once(welcome_anchor, welcome_new, "public landing review state")
 
-open_anchor = "  const openExam = (exam: Exam) => {"
-if open_anchor not in s:
-    raise SystemExit("openExam handler not found")
-s = s.replace(open_anchor, """  const showLeaderboard = async (exam: Exam) => {
-    setLeaderboardExam(exam)
-    setLeaderboardRows([])
-    setLeaderboardLoading(true)
-    setPage('leaderboard')
-    if (!supabase) {
-      setLeaderboardLoading(false)
-      return
-    }
-    const { data, error } = await supabase.rpc('get_public_exam_leaderboard', { p_exam_id: exam.id })
-    if (error) notify('دریافت جدول امتیازات ناموفق بود: ' + error.message, 'error')
-    else setLeaderboardRows((data || []) as LeaderboardRow[])
-    setLeaderboardLoading(false)
-  }
-
-""" + open_anchor, 1)
-
-# Pass the new actions into the public welcome page.
+# Ended contests offer public question review and public leaderboard links.
 once(
-    "      now={now}\n    />",
-    "      now={now}\n      onShowLeaderboard={showLeaderboard}\n    />",
-    "welcome public actions"
-)
-s = s.replace(
-    "function WelcomePage({ theme, onToggleTheme, onLogin, onRegister, onDemo, showDemo, exams, now }: {",
-    "function WelcomePage({ theme, onToggleTheme, onLogin, onRegister, onDemo, showDemo, exams, now, onShowLeaderboard }: {"
-)
-s = s.replace(
-    "showDemo: boolean; exams: Exam[]; now: number\n}) {",
-    "showDemo: boolean; exams: Exam[]; now: number; onShowLeaderboard: (exam: Exam) => void\n}) {",
-    1
-)
-s = s.replace(
     """<td><button className="public-row-action" onClick={onLogin}>جزئیات <ChevronLeft size={14} /></button></td>""",
     """<td className="public-row-actions">
                     {getStatus(exam, now) === 'ended'
-                      ? <><button className="public-row-action" onClick={() => setReviewExam(exam)}>صورت سؤال <FileUp size={14} /></button><button className="public-row-action" onClick={() => onShowLeaderboard(exam)}>امتیازات <Trophy size={14} /></button></>
+                      ? <><button className="public-row-action" onClick={() => setReviewExam(exam)}>صورت سؤال <FileUp size={14} /></button><button className="public-row-action" onClick={() => setLeaderboardExam(exam)}>امتیازات <Trophy size={14} /></button></>
                       : <button className="public-row-action" onClick={onLogin}>جزئیات <ChevronLeft size={14} /></button>}
-                  </td>"""
+                  </td>""",
+    "public contest ended actions"
 )
 
-# Landing-page status counts include all published contests.
-once(
-    "  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length",
-    "  const runningCount = publicExams.filter((exam) => getStatus(exam, now) === 'active').length\n  const upcomingCount = publicExams.filter((exam) => getStatus(exam, now) === 'upcoming').length\n  const endedCount = publicExams.filter((exam) => getStatus(exam, now) === 'ended').length\n  const [reviewExam, setReviewExam] = useState<Exam | null>(null)\n  if (reviewExam) return <PublicQuestionPage exam={reviewExam} onBack={() => setReviewExam(null)} onLeaderboard={() => onShowLeaderboard(reviewExam)} />",
-    "landing contest counts"
-)
+# Use reliable state counts rather than the old next-contest date summary.
 once(
     """            <div className="public-stat-foot"><span>مسابقه‌های منتشرشده</span><strong>{fa(publicExams.length)}</strong></div>
             <div className="public-stat-foot"><span>مسابقهٔ پیش‌رو</span><strong>{nextContest ? dateText(nextContest.starts_at) : 'به‌زودی'}</strong></div>""",
     """            <div className="public-stat-foot"><span>کل مسابقه‌ها</span><strong>{fa(publicExams.length)}</strong></div>
             <div className="public-stat-foot"><span>پیش‌رو</span><strong>{fa(upcomingCount)}</strong></div>
+            <div className="public-stat-foot"><span>در حال برگزاری</span><strong>{fa(runningCount)}</strong></div>
             <div className="public-stat-foot"><span>پایان‌یافته</span><strong>{fa(endedCount)}</strong></div>""",
-    "landing status breakdown"
+    "public landing status summary"
 )
 
-# The in-app contest card can open the leaderboard for ended competitions.
-s = s.replace(
-    "onRegister }: {\n  exam: Exam; now: number; onOpen: () => void; registered: boolean",
-    "onRegister, onLeaderboard }: {\n  exam: Exam; now: number; onOpen: () => void; registered: boolean",
-    1
+# --- Per-user dashboard leaderboard ---
+# The redesigned Dashboard already owns filter/search state. Add the
+# leaderboard selector after those hooks and show the table in-place.
+dashboard_search = "  const [search, setSearch] = useState('')"
+once(
+    dashboard_search,
+    dashboard_search + "\n  const [leaderboardExam, setLeaderboardExam] = useState<Exam | null>(null)",
+    "dashboard leaderboard state"
 )
-s = s.replace(
-    "teamMember: boolean; teamCaptain: boolean; onRegister: () => void\n}) {",
-    "teamMember: boolean; teamCaptain: boolean; onRegister: () => void; onLeaderboard: () => void\n}) {",
-    1
+dashboard_first_name = "  const firstName = profile?.full_name?.trim().split(/\\s+/)[0] || 'خوش آمدید'"
+once(
+    dashboard_first_name,
+    dashboard_first_name + "\n  if (leaderboardExam) return <PublicLeaderboardPage exam={leaderboardExam} onBack={() => setLeaderboardExam(null)} />",
+    "dashboard leaderboard view"
 )
-s = s.replace(
+
+# Add a public leaderboard control to ended cards, keeping active/upcoming
+# interactions unchanged.
+exam_card_signature = "function ExamCard({ exam, now, onOpen, registered, teamMember, teamCaptain, onRegister }: {"
+once(
+    exam_card_signature,
+    "function ExamCard({ exam, now, onOpen, registered, teamMember, teamCaptain, onRegister, onLeaderboard }: {",
+    "exam card leaderboard callback"
+)
+once(
+    "  teamMember: boolean; teamCaptain: boolean; onRegister: () => void\n}) {",
+    "  teamMember: boolean; teamCaptain: boolean; onRegister: () => void; onLeaderboard: () => void\n}) {",
+    "exam card leaderboard callback type"
+)
+once(
     """      <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
         {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده نتیجه' : 'جزئیات آزمون'}<ChevronLeft size={16} />
       </button>""",
     """      <button className={'button ' + (active && registered ? 'primary' : 'soft')} disabled={active && !registered} onClick={onOpen}>
         {active ? registered ? 'ورود به آزمون' : 'ثبت‌نام لازم است' : ended ? 'مشاهده سؤال‌ها و نتیجه' : 'جزئیات مسابقه'}<ChevronLeft size={16} />
       </button>
-      {ended && <button className="button soft small leaderboard-card-link" onClick={onLeaderboard}><Trophy size={14} />جدول امتیازات</button>}"""
+      {ended && <button className="button soft small leaderboard-card-link" onClick={onLeaderboard}><Trophy size={14} />جدول امتیازات</button>}""",
+    "ended contest card leaderboard button"
 )
-
-# Dashboard passes the callback for each ended contest card.
-s = s.replace(
-    "team, onRegister }: {",
-    "team, onRegister, onLeaderboard }: {",
-    1
-)
-s = s.replace(
-    "team: Team | null; onRegister: (exam: Exam) => void\n}) {",
-    "team: Team | null; onRegister: (exam: Exam) => void; onLeaderboard: (exam: Exam) => void\n}) {",
-    1
-)
-s = s.replace(
-    "teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} />",
-    "teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} onLeaderboard={() => onLeaderboard(exam)} />"
-)
-
-# Pass the leaderboard action from App to Dashboard.
-s = s.replace("onRegister={registerForExam}", "onRegister={registerForExam} onLeaderboard={showLeaderboard}", 1)
-
-# Render the leaderboard in the main authenticated content area.
 once(
-    "{page === 'profile' && <ProfilePage",
-    "{page === 'leaderboard' && leaderboardExam && <LeaderboardPage exam={leaderboardExam} rows={leaderboardRows} loading={leaderboardLoading} onBack={() => setPage('dashboard')} />}\n        {page === 'profile' && <ProfilePage",
-    "in-app leaderboard render"
+    "teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} />",
+    "teamCaptain={team?.role === 'captain'} onRegister={() => onRegister(exam)} onLeaderboard={() => setLeaderboardExam(exam)} />",
+    "dashboard card leaderboard callback"
 )
 
-# Public question page fetches only the public post-end metadata and PDF, never the answer key.
+# --- Public review components ---
 components = r'''
-function LeaderboardPage({ exam, rows, loading, onBack }: {
-  exam: Exam; rows: LeaderboardRow[]; loading: boolean; onBack: () => void
-}) {
+function PublicLeaderboardPage({ exam, onBack }: { exam: Exam; onBack: () => void }) {
+  const [rows, setRows] = useState<LeaderboardRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    const client = supabase
+    let alive = true
+    const load = async () => {
+      if (!client) {
+        setError('اتصال به سامانه در دسترس نیست.')
+        setLoading(false)
+        return
+      }
+      const { data, error: queryError } = await client.rpc('get_public_exam_leaderboard', { p_exam_id: exam.id })
+      if (!alive) return
+      if (queryError) setError(queryError.message)
+      else setRows((data || []) as LeaderboardRow[])
+      setLoading(false)
+    }
+    void load()
+    return () => { alive = false }
+  }, [exam.id])
   return <section className="leaderboard-page">
     <div className="backline"><button className="back-button" onClick={onBack}><ArrowLeft size={16} />بازگشت</button></div>
     <div className="leaderboard-hero"><div className="eyebrow">CONTEST LEADERBOARD</div><h1>جدول امتیازات</h1><p>{exam.title}</p></div>
     <div className="panel-card leaderboard-panel">
-      {loading ? <div className="mini-empty">در حال دریافت جدول امتیازات...</div> : rows.length === 0 ? <div className="mini-empty">هنوز نتیجه‌ای برای این مسابقه ثبت نشده است.</div> :
-      <div className="leaderboard-table-wrap"><table className="leaderboard-table">
-        <thead><tr><th>رتبه</th><th>شرکت‌کننده</th><th>نوع</th><th>نمره</th><th>درست</th><th>غلط</th></tr></thead>
-        <tbody>{rows.map((row) => <tr key={(row.team_name || row.display_name) + '-' + row.position}>
-          <td><b className="leaderboard-rank">{fa(row.position)}</b></td>
-          <td><b>{row.display_name}</b></td><td>{row.is_team ? 'تیمی' : 'انفرادی'}</td>
-          <td><strong>{fa(row.score)}</strong><small> / {fa(row.max_score)}</small></td>
-          <td className="leaderboard-correct">{fa(row.correct_count)}</td><td className="leaderboard-wrong">{fa(row.wrong_count)}</td>
-        </tr>)}</tbody>
-      </table></div>}
+      {loading ? <div className="mini-empty">در حال دریافت جدول امتیازات...</div>
+        : error ? <div className="mini-empty">{error}</div>
+        : rows.length === 0 ? <div className="mini-empty">هنوز نتیجه‌ای برای این مسابقه ثبت نشده است.</div>
+        : <div className="leaderboard-table-wrap"><table className="leaderboard-table">
+          <thead><tr><th>رتبه</th><th>شرکت‌کننده</th><th>نوع</th><th>نمره</th><th>درست</th><th>غلط</th></tr></thead>
+          <tbody>{rows.map((row) => <tr key={(row.team_name || row.display_name) + '-' + row.position}>
+            <td><b className="leaderboard-rank">{fa(row.position)}</b></td>
+            <td><b>{row.display_name}</b></td>
+            <td>{row.is_team ? 'تیمی' : 'انفرادی'}</td>
+            <td><strong>{fa(row.score)}</strong><small> / {fa(row.max_score)}</small></td>
+            <td className="leaderboard-correct">{fa(row.correct_count)}</td>
+            <td className="leaderboard-wrong">{fa(row.wrong_count)}</td>
+          </tr>)}</tbody>
+        </table></div>}
     </div>
   </section>
 }
@@ -164,7 +163,11 @@ function PublicQuestionPage({ exam, onBack, onLeaderboard }: {
     const client = supabase
     let alive = true
     const load = async () => {
-      if (!client) { setLoading(false); setError('اتصال به سامانه در دسترس نیست.'); return }
+      if (!client) {
+        setLoading(false)
+        setError('اتصال به سامانه در دسترس نیست.')
+        return
+      }
       const [questions, resource] = await Promise.all([
         client.rpc('get_public_exam_questions', { p_exam_id: exam.id }),
         client.rpc('get_public_exam_question_resource', { p_exam_id: exam.id }),
@@ -172,13 +175,16 @@ function PublicQuestionPage({ exam, onBack, onLeaderboard }: {
       if (!alive) return
       if (questions.error) setError(questions.error.message)
       else setQuestionRows(questions.data || [])
+      if (resource.error) setError((current) => current || resource.error.message)
       const item = Array.isArray(resource.data) ? resource.data[0] : resource.data
       let url = item?.question_pdf_url || ''
       if (item?.question_file_path) {
-        const { data, error: signedError } = await client.storage.from('exam-question-files').createSignedUrl(item.question_file_path, 3600)
+        const { data, error: signedError } = await client.storage
+          .from('exam-question-files').createSignedUrl(item.question_file_path, 3600)
         if (!signedError && data?.signedUrl) url = data.signedUrl
-        else if (!url && signedError) setError(signedError.message)
+        else if (!url && signedError) setError((current) => current || signedError.message)
       }
+      if (!alive) return
       setPaperUrl(url)
       setLoading(false)
     }
@@ -186,14 +192,25 @@ function PublicQuestionPage({ exam, onBack, onLeaderboard }: {
     return () => { alive = false }
   }, [exam.id])
   return <div className="public-site">
-    <header className="public-header"><a href="#public-top" className="public-brand"><span className="public-brand-mark"><img src={import.meta.env.BASE_URL + 'fj-logo.svg'} alt="FJ" /></span><span>فارسی جاج</span></a><div className="public-actions"><button className="button soft small" onClick={onBack}><ArrowLeft size={15} />بازگشت</button><button className="button primary small" onClick={onLeaderboard}><Trophy size={15} />جدول امتیازات</button></div></header>
+    <header className="public-header">
+      <a href="#public-top" className="public-brand"><span className="public-brand-mark"><img src={import.meta.env.BASE_URL + 'fj-logo.svg'} alt="FJ" /></span><span>فارسی جاج</span></a>
+      <div className="public-actions">
+        <button className="button soft small" onClick={onBack}><ArrowLeft size={15} />بازگشت</button>
+        <button className="button primary small" onClick={onLeaderboard}><Trophy size={15} />جدول امتیازات</button>
+      </div>
+    </header>
     <main className="public-main public-question-page">
       <div className="eyebrow">CONTEST REVIEW</div><h1>{exam.title}</h1><p>صورت سؤال مسابقه پس از پایان برای همه قابل مشاهده است.</p>
       {loading ? <div className="panel-card mini-empty">در حال بارگذاری صورت سؤال...</div> :
         <section className="panel-card public-question-panel">
-          {paperUrl ? <><div className="public-question-actions"><a href={paperUrl} target="_blank" rel="noreferrer">باز کردن یا دانلود فایل PDF <ExternalLink size={14} /></a></div><iframe src={paperUrl} title={'صورت سؤال ' + exam.title} loading="lazy" /></>
+          {paperUrl
+            ? <><div className="public-question-actions"><a href={paperUrl} target="_blank" rel="noreferrer">باز کردن یا دانلود فایل PDF <ExternalLink size={14} /></a></div><iframe src={paperUrl} title={'صورت سؤال ' + exam.title} loading="lazy" /></>
             : <div className="public-empty"><FileUp size={25} /><b>فایل صورت سؤال برای این مسابقه ثبت نشده است.</b><span>{error || 'از برگزارکننده بخواهید فایل PDF را اضافه کند.'}</span></div>}
-          {questionRows.length > 0 && <div className="public-question-counts"><b>{fa(questionRows.length)} سؤال</b><span>مجموع نمره: {fa(questionRows.reduce((sum, row) => sum + Number(row.points || 0), 0))}</span>{questionRows.map((row) => <span key={row.question_number}>سؤال {fa(row.question_number)} · {fa(row.points)} نمره</span>)}</div>}
+          {questionRows.length > 0 && <div className="public-question-counts">
+            <b>{fa(questionRows.length)} سؤال</b>
+            <span>مجموع نمره: {fa(questionRows.reduce((sum, row) => sum + Number(row.points || 0), 0))}</span>
+            {questionRows.map((row) => <span key={row.question_number}>سؤال {fa(row.question_number)} · {fa(row.points)} نمره</span>)}
+          </div>}
         </section>}
       {error && <p className="public-resource-error">{error}</p>}
     </main>
@@ -202,10 +219,7 @@ function PublicQuestionPage({ exam, onBack, onLeaderboard }: {
 '''
 if s.count("function ProfilePage(") != 1:
     raise SystemExit("ProfilePage insertion point mismatch")
-s = s.replace("function ProfilePage(", components + chr(10) + "function ProfilePage(", 1)
-
-# The upcoming-contest date was replaced by a count in the public summary.
-s = s.replace("  const nextContest = publicExams.find((exam) => getStatus(exam, now) === 'upcoming')\n", "")
+s = s.replace("function ProfilePage(", components + "\nfunction ProfilePage(", 1)
 
 p.write_text(s, encoding="utf-8")
 
@@ -245,4 +259,4 @@ css += """
 }
 """
 cssp.write_text(css, encoding="utf-8")
-print("Added public post-contest questions, leaderboard pages and mobile theme cleanup.")
+print("Added public post-contest questions, public leaderboards and mobile theme cleanup.")
