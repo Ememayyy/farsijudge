@@ -19,24 +19,14 @@ def once(old: str, new: str, label: str) -> None:
 once(
 """    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
-      if (nextSession) setPage('dashboard')
       if (!nextSession) {
-        setProfile(null)
-        setExams([])
-        setPage('welcome')
-      }
-    })""",
-"""    const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      setSession(nextSession)
-      if (event === 'SIGNED_IN' && nextSession) setPage('dashboard')
-      if (event === 'SIGNED_OUT' || !nextSession) {
         setProfile(null)
         setExams([])
         setSelectedExam(null)
         setPage('welcome')
       }
     })""",
-"preserve current page during auth token refresh"
+"only sign out changes route"
 )
 
 # Global public-review route state belongs to App, not to the Dashboard card component.
@@ -94,7 +84,7 @@ once(
 
 once(
 "function Dashboard({ exams, profile, now, onOpen, onAdmin, isAdmin, isDemo, myRegistrations, myTeamRegistrations, team, onRegister }: {",
-"function Dashboard({ exams, profile, now, onOpen, onAdmin, isAdmin, isDemo, onRefresh, myRegistrations, myTeamRegistrations, team, onRegister, onReviewQuestions, onLeaderboard }: {",
+"function Dashboard({ exams, profile, now, onOpen, onAdmin, isAdmin, isDemo, myRegistrations, myTeamRegistrations, team, onRegister, onReviewQuestions, onLeaderboard }: {",
 "dashboard review callbacks"
 )
 once(
@@ -193,8 +183,8 @@ s = s.replace(tag_anchor, tag_helpers + tag_anchor, 1)
 
 # Dashboard and public list cards expose the tags.
 once(
-"""<h3>{exam.title}</h3><p className="exam-description">{exam.description || 'برای مشاهده جزئیات این آزمون وارد صفحه آن شوید.'}</p>""",
-"""<h3>{exam.title}</h3><ContestTagList tags={exam.tags} /><p className="exam-description">{exam.description || 'برای مشاهده جزئیات این آزمون وارد صفحه آن شوید.'}</p>""",
+"""<h3>{exam.title}</h3>""",
+"""<h3>{exam.title}</h3><ContestTagList tags={exam.tags} />""",
 "dashboard exam card tags"
 )
 once(
