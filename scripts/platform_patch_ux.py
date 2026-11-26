@@ -181,12 +181,17 @@ if s.count(tag_anchor) != 1:
     raise SystemExit("WelcomePage tag helper insertion point mismatch")
 s = s.replace(tag_anchor, tag_helpers + tag_anchor, 1)
 
-# Dashboard and public list cards expose the tags.
-once(
-"""<h3>{exam.title}</h3>""",
-"""<h3>{exam.title}</h3><ContestTagList tags={exam.tags} />""",
-"dashboard exam card tags"
-)
+# Dashboard card gets tags within its own component, independent of markup around it.
+card_start = s.index("function ExamCard(")
+card_end = s.index("\nfunction StatusBadge(", card_start)
+card = s[card_start:card_end]
+if "ContestTagList tags={exam.tags}" not in card:
+    title_anchor = "<h3>{exam.title}</h3>"
+    if card.count(title_anchor) != 1:
+        raise SystemExit("ExamCard title tag insertion point mismatch")
+    card = card.replace(title_anchor, title_anchor + "<ContestTagList tags={exam.tags} />", 1)
+s = s[:card_start] + card + s[card_end:]
+
 once(
 """<td><b>{exam.title}</b><small>{exam.description || 'مسابقهٔ آنلاین فارسی جاج'}</small></td>""",
 """<td><b>{exam.title}</b><small>{exam.description || 'مسابقهٔ آنلاین فارسی جاج'}</small><ContestTagList tags={exam.tags} compact /></td>""",
