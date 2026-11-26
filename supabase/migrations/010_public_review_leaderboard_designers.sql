@@ -509,7 +509,20 @@ begin
       r.score,
       r.max_score,
       r.correct_count,
-      greatest(r.question_count - r.correct_count, 0)::integer as wrong_count,
+      coalesce((
+        select count(*)::integer
+        from public.exam_answers a
+        join public.exam_answer_keys k
+          on k.exam_id = a.exam_id
+         and k.question_number = a.question_number
+        where a.exam_id = r.exam_id
+          and a.answer is not null
+          and a.answer <> k.correct_answer
+          and (
+            (r.team_id is not null and a.team_id = r.team_id)
+            or (r.team_id is null and a.team_id is null and a.user_id = r.user_id)
+          )
+      ), 0) as wrong_count,
       r.question_count,
       (r.team_id is not null) as is_team
     from public.exam_results r
