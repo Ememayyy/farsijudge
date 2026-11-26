@@ -109,6 +109,7 @@ for required in (
     "get_public_exam_question_resource",
     "designer_create_exam_with_answer_key",
     "designer_edit_exam_with_answer_key",
+    "designer_update_contest_controls",
     "update_my_display_name",
 ):
     check(required in bundle, f"Built frontend is missing expected RPC contract: {required}")
@@ -150,6 +151,8 @@ if migration_path.is_file():
               "Leaderboard output column must be rank, not reserved word position.")
         check("perform public.finalize_exam_internal(p_exam_id)" in declaration,
               "Leaderboard no longer finalizes scores on access.")
+    check("function public.designer_update_contest_controls" in sql,
+          "Migration 010 is missing owner-scoped designer contest controls.")
 
 # Parse every SQL migration with PostgreSQL's grammar parser in CI.
 try:
