@@ -18,7 +18,7 @@ if "type LeaderboardRow =" not in s:
         match = re.search(r"^function App\b", s, re.M)
     if not match:
         raise SystemExit("Could not find a stable TypeScript type insertion point")
-    leaderboard_type = "type LeaderboardRow = { position: number; display_name: string; team_name: string | null; score: number; max_score: number; correct_count: number; wrong_count: number; question_count: number; is_team: boolean }\n"
+    leaderboard_type = "type LeaderboardRow = { rank: number; display_name: string; team_name: string | null; score: number; max_score: number; correct_count: number; wrong_count: number; question_count: number; is_team: boolean }\n"
     s = s[:match.start()] + leaderboard_type + s[match.start():]
 
 # --- Public landing page ---
@@ -154,8 +154,8 @@ function PublicLeaderboardPage({ exam, onBack }: { exam: Exam; onBack: () => voi
         : rows.length === 0 ? <div className="mini-empty">هنوز نتیجه‌ای برای این مسابقه ثبت نشده است.</div>
         : <div className="leaderboard-table-wrap"><table className="leaderboard-table">
           <thead><tr><th>رتبه</th><th>شرکت‌کننده</th><th>نوع</th><th>نمره</th><th>درست</th><th>غلط</th></tr></thead>
-          <tbody>{rows.map((row) => <tr key={(row.team_name || row.display_name) + '-' + row.position}>
-            <td><b className="leaderboard-rank">{fa(row.position)}</b></td>
+          <tbody>{rows.map((row) => <tr key={(row.team_name || row.display_name) + '-' + row.rank}>
+            <td><b className="leaderboard-rank">{fa(row.rank)}</b></td>
             <td><b>{row.display_name}</b></td>
             <td>{row.is_team ? 'تیمی' : 'انفرادی'}</td>
             <td><strong>{fa(row.score)}</strong><small> / {fa(row.max_score)}</small></td>
