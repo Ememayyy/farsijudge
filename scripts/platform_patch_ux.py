@@ -71,7 +71,7 @@ once(
 )
 once(
 "const [sidebarOpen, setSidebarOpen] = useState(false)",
-"const [sidebarOpen, setSidebarOpen] = useState(false)\n  const [selectedPublicExam, setSelectedPublicExam] = useState<Exam | null>(null)\n  const [routeSnapshotReady, setRouteSnapshotReady] = useState(false)\n  useEffect(() => {\n    try {\n      const saved = JSON.parse(sessionStorage.getItem('farsijudge-route') || 'null')\n      if (saved && typeof saved === 'object') {\n        if (saved.selectedExam && typeof saved.selectedExam.id === 'string') setSelectedExam(saved.selectedExam as Exam)\n        if (saved.selectedPublicExam && typeof saved.selectedPublicExam.id === 'string') setSelectedPublicExam(saved.selectedPublicExam as Exam)\n      }\n    } catch { /* Ignore an invalid or unavailable session snapshot. */ }\n    setRouteSnapshotReady(true)\n  }, [])\n  useEffect(() => {\n    if (!routeSnapshotReady) return\n    try {\n      sessionStorage.setItem('farsijudge-route', JSON.stringify({ page, selectedExam, selectedPublicExam }))\n    } catch { /* Storage can be unavailable in private browsing. */ }\n  }, [routeSnapshotReady, page, selectedPublicExam])\n  useEffect(() => {\n    if (!routeSnapshotReady) return\n    if (['exam', 'registration'].includes(page) && !selectedExam) setPage('dashboard')\n    if (['leaderboard', 'public-questions'].includes(page) && !selectedPublicExam) setPage(isLoggedIn ? 'dashboard' : 'welcome')\n  }, [routeSnapshotReady, page, selectedPublicExam])",
+"const [sidebarOpen, setSidebarOpen] = useState(false)\n  const [selectedPublicExam, setSelectedPublicExam] = useState<Exam | null>(null)\n  const [routeSnapshotReady, setRouteSnapshotReady] = useState(false)",
 "global public review state and tab-return route persistence"
 )
 
@@ -98,6 +98,35 @@ dashboard_routes = """  if (leaderboardExam) return <PublicLeaderboardPage exam=
 if s.count(dashboard_routes) != 1:
     raise SystemExit("Dashboard local review route block mismatch")
 s = s.replace(dashboard_routes, "", 1)
+
+# Restore and persist navigation after all App state declarations to avoid temporal-dead-zone references.
+once(
+"  const chooseRegistration = (exam: Exam) => {",
+"""  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('farsijudge-route') || 'null')
+      if (saved && typeof saved === 'object') {
+        if (saved.selectedExam && typeof saved.selectedExam.id === 'string') setSelectedExam(saved.selectedExam as Exam)
+        if (saved.selectedPublicExam && typeof saved.selectedPublicExam.id === 'string') setSelectedPublicExam(saved.selectedPublicExam as Exam)
+      }
+    } catch { /* Ignore an invalid or unavailable session snapshot. */ }
+    setRouteSnapshotReady(true)
+  }, [])
+  useEffect(() => {
+    if (!routeSnapshotReady) return
+    try {
+      sessionStorage.setItem('farsijudge-route', JSON.stringify({ page, selectedExam, selectedPublicExam }))
+    } catch { /* Storage can be unavailable in private browsing. */ }
+  }, [routeSnapshotReady, page, selectedExam, selectedPublicExam])
+  useEffect(() => {
+    if (!routeSnapshotReady) return
+    if (['exam', 'registration'].includes(page) && !selectedExam) setPage('dashboard')
+    if (['leaderboard', 'public-questions'].includes(page) && !selectedPublicExam) setPage(isLoggedIn ? 'dashboard' : 'welcome')
+  }, [routeSnapshotReady, page, selectedExam, selectedPublicExam, isLoggedIn])
+
+  const chooseRegistration = (exam: Exam) => {""",
+"restore and persist route after App state initialization"
+)
 
 # Welcome page and dashboard receive navigation callbacks from the App router.
 once(
