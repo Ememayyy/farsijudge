@@ -1,5 +1,7 @@
 from pathlib import Path
+import io
 import json
+import cairosvg
 from PIL import Image
 
 app_path = Path("src/App.tsx")
@@ -47,12 +49,12 @@ once(
 # Use the same site logo in the public header and mobile app bar.
 once(
     '<span className="public-brand-mark"><BookOpen size={23} /></span>',
-    '<span className="public-brand-mark"><img src={import.meta.env.BASE_URL + \'farsijudge-logo.webp\'} alt="فارسی جاج" /></span>',
+    '<span className="public-brand-mark"><img src={import.meta.env.BASE_URL + \'fj-logo.svg\'} alt="فارسی جاج" /></span>',
     "public site logo"
 )
 once(
     '<div className="mobile-appbar-brand"><span className="brand-mark"><BookOpen size={20} /></span><b>فارسی جاج</b></div>',
-    '<div className="mobile-appbar-brand"><span className="brand-mark mobile-brand-mark"><img src={import.meta.env.BASE_URL + \'farsijudge-logo.webp\'} alt="" /></span><b>فارسی جاج</b></div>',
+    '<div className="mobile-appbar-brand"><span className="brand-mark mobile-brand-mark"><img src={import.meta.env.BASE_URL + \'fj-logo.svg\'} alt="" /></span><b>فارسی جاج</b></div>',
     "mobile app bar logo"
 )
 
@@ -193,11 +195,12 @@ css_path.write_text(css, encoding="utf-8")
 # browser tab and the home-screen icon on iOS/Android.
 public = Path("public")
 public.mkdir(exist_ok=True)
-logo_path = public / "farsijudge-logo.webp"
+logo_path = public / "fj-logo.svg"
 if not logo_path.exists():
-    raise SystemExit("PWA logo source public/farsijudge-logo.webp is missing")
+    raise SystemExit("PWA logo source public/fj-logo.svg is missing")
 
-logo = Image.open(logo_path).convert("RGBA")
+logo_png = cairosvg.svg2png(url=str(logo_path), output_width=768, output_height=768)
+logo = Image.open(io.BytesIO(logo_png)).convert("RGBA")
 for size in (180, 192, 512):
     canvas = Image.new("RGBA", (size, size), (11, 11, 16, 255))
     mark = logo.copy()
