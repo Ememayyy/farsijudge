@@ -9,15 +9,17 @@ app = app.replace("آزمون ها", "مسابقه‌ها")
 app = app.replace("آزمون‌ها", "مسابقه‌ها")
 app = app.replace("آزمون", "مسابقه")
 
-# Captain is included in the team size: three people total.
-app = app.replace("members.length < 4", "members.length < 3")
-app = app.replace("از ۴ عضو", "از ۳ عضو")
-app = app.replace("از 4 عضو", "از 3 عضو")
-app = app.replace("یک تیم چهار نفره", "یک تیم سه‌نفره")
-app = app.replace("یک تیم ۴ نفره", "یک تیم سه‌نفره")
-app = app.replace("سه عضو دیگر", "دو عضو دیگر")
-app = app.replace("سه عضو به جز کاپیتان", "دو عضو به‌علاوه کاپیتان")
-app = app.replace("هر تیم حداکثر یک کاپیتان و سه عضو دیگر دارد", "هر تیم حداکثر سه نفر با احتساب کاپیتان دارد")
+# Team capacity is four people total, including the captain. Keep the
+# interface aligned with the database migration 009.
+app = app.replace("members.length < 3", "members.length < 4")
+app = app.replace("از ۳ عضو", "از ۴ عضو")
+app = app.replace("از 3 عضو", "از 4 عضو")
+app = app.replace("یک تیم سه‌نفره", "یک تیم چهار نفره")
+app = app.replace("یک تیم سه نفره", "یک تیم چهار نفره")
+app = app.replace("یک تیم ۳ نفره", "یک تیم ۴ نفره")
+app = app.replace("دو عضو دیگر", "سه عضو دیگر")
+app = app.replace("دو عضو به‌علاوه کاپیتان", "سه عضو به‌جز کاپیتان")
+app = app.replace("هر تیم حداکثر سه نفر با احتساب کاپیتان دارد", "هر تیم حداکثر چهار نفر با احتساب کاپیتان دارد")
 
 app_path.write_text(app, encoding="utf-8")
 
