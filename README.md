@@ -20,13 +20,19 @@ https://ememayyy.github.io/farsijudge/
 
 ## نصب پایگاه داده و قابلیت‌های پلتفرم
 
-پس از انتشار این نسخه، فایل زیر را **یک‌بار** در Supabase → SQL Editor اجرا کنید:
+**نکتهٔ مهم:** انتشار GitHub Pages فقط رابط کاربری را Build و منتشر می‌کند؛ هیچ‌کدام از SQL migrationها را روی پروژهٔ Supabase اجرا نمی‌کند. برای فعال شدن قابلیت‌ها، فایل‌های زیر را در Supabase → SQL Editor **به همین ترتیب و هرکدام فقط یک‌بار** اجرا کن. پیش از رفتن به فایل بعدی، مطمئن شو اجرای فایل قبلی با موفقیت تمام شده است.
 
-- [supabase/migrations/002_teams_registration_admin_features.sql](supabase/migrations/002_teams_registration_admin_features.sql)
+1. [002_teams_registration_admin_features.sql](supabase/migrations/002_teams_registration_admin_features.sql) — ساخت تیم، دعوت اعضا، ثبت‌نام فردی/تیمی، پاسخ‌ها و تصحیح خودکار.
+2. [003_farsijudge_platform_upgrade.sql](supabase/migrations/003_farsijudge_platform_upgrade.sql) — کنترل زمان مسابقه، ثبت نشست، ظرفیت و مدیریت تیم، انتشار نتایج و دسترسی به فایل سؤال.
+3. [004_profile_edit.sql](supabase/migrations/004_profile_edit.sql) — امکان تغییر نام نمایشی.
+4. [005_remove_single_device_restriction.sql](supabase/migrations/005_remove_single_device_restriction.sql) — حذف محدودیت ورود تک‌دستگاهی.
+5. [006_public_contest_feed.sql](supabase/migrations/006_public_contest_feed.sql) — فهرست عمومی مسابقه‌های منتشرشده.
+6. [007_contest_participants.sql](supabase/migrations/007_contest_participants.sql) — نمایش و مدیریت شرکت‌کنندگان مسابقه.
+7. [008_contest_unregistration.sql](supabase/migrations/008_contest_unregistration.sql) — لغو ثبت‌نام در مسابقه.
+8. [009_restore_four_person_teams.sql](supabase/migrations/009_restore_four_person_teams.sql) — ظرفیت چهار نفر برای هر تیم، با احتساب کاپیتان.
+9. [010_public_review_leaderboard_designers.sql](supabase/migrations/010_public_review_leaderboard_designers.sql) — مشاهدهٔ عمومی سؤال‌ها و جدول امتیازات پس از مسابقه، و نقش طراح مسابقه.
 
-این migration ستون نام کاربری، امکان تغییر نام کاربری از صفحه تیم، تیم‌ها، دعوت‌نامه‌ها، ثبت‌نام فردی/تیمی، پاسخ‌های مشترک، لینک یا فایل خصوصی PDF و RPCهای امن مدیریت و تصحیح مجدد را اضافه می‌کند. همچنین `pg_cron` را فعال می‌کند و هر دقیقه آزمون‌های پایان‌یافته و تصحیح‌نشده را به‌طور خودکار تصحیح می‌کند. بدون اجرای migration، رابط جدید به جداول و توابعی اشاره می‌کند که هنوز در دیتابیس وجود ندارند.
-
-سپس فایل [003_farsijudge_platform_upgrade.sql](supabase/migrations/003_farsijudge_platform_upgrade.sql) را **یک‌بار** اجرا کن. این Migration توابع و محدودیت‌های دیتابیس برای سقف سه نفر با احتساب کاپیتان، خروج و انتقال کاپیتانی، ثبت نشست تک‌دستگاهی، کنترل زمان مسابقه، انتشار کارنامه، تگ‌ها، حذف کاربر و بررسی سؤال‌به‌سؤال را اضافه می‌کند. توجه کن که وجود RPC در دیتابیس به‌تنهایی به معنی اتصال کامل دکمه‌ها و صفحات فرانت‌اند نیست؛ این اتصال‌ها باید جداگانه تکمیل و تست شوند.
+اگر migration شمارهٔ 010 را قبلاً با نسخهٔ قدیمی اجرا کرده‌ای و خطای `position` گرفته‌ای، فایل فعلی را کامل جایگزین و از ابتدا اجرا کن؛ نام ستون خروجی جدول امتیازات در نسخهٔ اصلاح‌شده `rank` است.
 
 ## مدیر کردن حساب مالک
 
