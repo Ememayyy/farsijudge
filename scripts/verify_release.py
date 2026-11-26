@@ -48,7 +48,7 @@ def is_external(value: str) -> bool:
     return bool(parsed.scheme or parsed.netloc) or value.startswith(("#", "data:", "blob:"))
 
 
-def check_asset(ref: str, origin: str) -> None:
+def check_asset(ref: str, origin: str, base_dir: Path = DIST) -> None:
     value = unquote(urlsplit(ref).path)
     if not value or is_external(ref):
         return
@@ -56,10 +56,15 @@ def check_asset(ref: str, origin: str) -> None:
         if not value.startswith(BASE_PATH):
             errors.append(f"{origin}: absolute asset is outside the configured base path: {ref}")
             return
-        value = value[len(BASE_PATH):]
+        candidate = DIST / value[len(BASE_PATH):]
     else:
-        value = value.lstrip("./")
-    candidate = DIST / value
+        candidate = base_dir / value
+    candidate = candidate.resolve()
+    try:
+        candidate.relative_to(DIST.resolve())
+    except ValueError:
+        errors.append(f"{origin}: asset escapes the deployment directory: {ref}")
+        return
     check(candidate.is_file(), f"{origin}: referenced file does not exist: {ref} -> {candidate}")
 
 
@@ -93,7 +98,7 @@ if manifest_path.is_file():
 for css_path in (DIST / "assets").glob("*.css"):
     css = css_path.read_text(encoding="utf-8")
     for match in re.finditer(r"url\(\s*['\"]?([^'\"\)]+)", css):
-        check_asset(match.group(1).strip(), css_path.name)
+        check_asset(match.group(1).strip(), css_path.name, css_path.parent)
 
 js_files = sorted((DIST / "assets").glob("*.js"))
 check(bool(js_files), "No built JavaScript bundle was found.")
