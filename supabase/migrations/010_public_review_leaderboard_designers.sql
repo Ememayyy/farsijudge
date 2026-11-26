@@ -312,7 +312,7 @@ language plpgsql
 stable
 security definer
 set search_path = ''
-as $
+as $$
 begin
   if not (select public.can_manage_exam(p_exam_id))
      or not (select public.is_contest_designer()) then
@@ -323,7 +323,7 @@ begin
   from public.exam_question_resources r
   where r.exam_id = p_exam_id;
 end;
-$;
+$$;
 revoke all on function public.get_designer_exam_question_resource(uuid) from public, anon;
 grant execute on function public.get_designer_exam_question_resource(uuid) to authenticated;
 
