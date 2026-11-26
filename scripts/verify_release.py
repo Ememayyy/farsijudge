@@ -125,8 +125,8 @@ for js_path in js_files:
 
 if APP.is_file():
     app = APP.read_text(encoding="utf-8")
-    check(bool(re.search(r"team\.role\s*===\s*['\"]captain['\"]\s*&&\s*members\.length\s*<\s*4", app)),
-          "Team invitation UI does not allow the fourth member.")
+    check("team.role === 'captain' && members.length + invitations.filter((invitation) => invitation.status === 'pending').length < 4" in app,
+          "Team invitation UI must count pending invitations toward its four-person capacity.")
     check("از ۴ عضو" in app or "از 4 عضو" in app, "Team capacity label does not advertise four people.")
     check(not re.search(r"team\.role\s*===\s*['\"]captain['\"]\s*&&\s*members\.length\s*<\s*3", app),
           "A stale three-person team limit remains in the UI.")
