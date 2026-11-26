@@ -282,17 +282,13 @@ once(
 create_start = s.index("  const createExam = async (event: FormEvent) => {")
 create_end = s.index("\n  const changeQuestionCount", create_start)
 create_block = s[create_start:create_end]
-cleanup_anchor = "    if (!failed) {"
+cleanup_anchor = "      setAdminTitle('')"
 if create_block.count(cleanup_anchor) != 1:
-    raise SystemExit("Admin create/edit cleanup anchor mismatch.")
-edit_tag_persist = """    if (!failed && editingExamId) {
-      const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', editingExamId)
-      if (tagError) {
-        notify('آزمون ویرایش شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
-        failed = true
+    raise SystemExit("Admin create/edit reset-field anchor mismatch.")
+edit_tag_persist = """      if (editingExamId) {
+        const { error: tagError } = await supabase.from('exams').update({ tags: normalizedExamTags }).eq('id', editingExamId)
+        if (tagError) notify('آزمون ویرایش شد اما ذخیره تگ‌ها ناموفق بود: ' + tagError.message, 'error')
       }
-    }
-
 """
 create_block = create_block.replace(cleanup_anchor, edit_tag_persist + cleanup_anchor, 1)
 s = s[:create_start] + create_block + s[create_end:]
