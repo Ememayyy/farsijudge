@@ -51,6 +51,14 @@ effect = """
 """
 app = replace_once(app, state_line, state_line + effect, "mobile drawer state effect")
 
+# The public contest hero shows completed contests, not only contests active right now.
+app = replace_once(
+    app,
+    '<div className="oj-hero-live-count">{fa(active.length)}<span>مسابقهٔ فعال</span></div>',
+    '<div className="oj-hero-live-count">{fa(ended.length)}<span>مسابقهٔ برگزارشده</span></div>',
+    "completed contest total in public hero",
+)
+
 css += r"""
 
 /* FJ MOBILE-FIRST NAVIGATION v3 — deliberately last to override desktop nav styles */
@@ -443,6 +451,17 @@ button, a { touch-action:manipulation; }
     transition-duration:.01ms !important;
     animation-duration:.01ms !important;
     animation-iteration-count:1 !important;
+  }
+}
+@media (max-width:950px) {
+  /* Keep the appbar theme switch as the sole mobile theme control. */
+  .oj-app-shell .topbar button[aria-label*="پوسته"],
+  .oj-app-shell .topbar button[title*="پوسته"],
+  .oj-app-shell .topbar button[aria-label*="تم"],
+  .oj-app-shell .topbar button[title*="تم"],
+  .oj-app-shell .topbar button:has(svg.lucide-sun),
+  .oj-app-shell .topbar button:has(svg.lucide-moon) {
+    display:none !important;
   }
 }
 """
