@@ -228,6 +228,19 @@ if APP.is_file():
         check(auth_width_contract in auth_width_css,
               f"Authentication width contract is missing: {auth_width_contract}.")
 
+    auth_full_width_css = full_redesign_css[full_redesign_css.find("FJ AUTH FULL-WIDTH EXPERIENCE v1"):]
+    check(bool(auth_full_width_css), "The edge-to-edge authentication layout is missing.")
+    for full_width_contract in (
+        "padding-inline:clamp(22px,2.1vw,42px) !important",
+        "width:100% !important",
+        "max-width:none !important",
+        "@media (min-width:1101px)",
+        "@media (min-width:701px) and (max-width:1100px)",
+        "@media (max-width:700px)",
+    ):
+        check(full_width_contract in auth_full_width_css,
+              f"Full-width authentication contract is missing: {full_width_contract}.")
+
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
           "Contest designer is missing quick topic presets.")
     for tag in ("combinatorics", "algorithm", "programming", "graph", "algebra", "geometry"):
