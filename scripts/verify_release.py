@@ -164,6 +164,14 @@ if APP.is_file():
         "font-size:16px !important",
     ):
         check(mobile_contract in mobile_css, f"Mobile usability contract is missing: {mobile_contract}.")
+    check('.oj-app-shell .topbar button:has(svg.lucide-sun)' in mobile_css,
+          "The extra theme control in the mobile topbar must be hidden.")
+    check('.oj-app-shell .topbar button:has(svg.lucide-moon)' in mobile_css,
+          "The extra theme control in the mobile topbar must be hidden for both themes.")
+    check('<div className="oj-hero-live-count">{fa(ended.length)}<span>مسابقهٔ برگزارشده</span></div>' in app,
+          "The public homepage hero must show the completed contest count.")
+    check('<div className="oj-hero-live-count">{fa(active.length)}<span>مسابقهٔ فعال</span></div>' not in app,
+          "The public homepage hero still shows the active contest count.")
     check("mobile-signout-button" in app and "await supabase.auth.signOut()" in app,
           "The mobile app bar must provide a direct sign-out action.")
     check("aria-expanded={sidebarOpen}" in app and "setSidebarOpen((open) => !open)" in app,
