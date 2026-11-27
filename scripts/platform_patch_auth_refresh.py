@@ -267,6 +267,11 @@ css += r"""
   }
 }
 """
+mode_line = next(i for i, line in enumerate(app.splitlines(), 1) if "auth-mode-switch" in line)
+app_lines = app.splitlines()
+print("AUTH MODE SWITCH CONTEXT:")
+for i in range(max(0, mode_line - 7), min(len(app_lines), mode_line + 10)):
+    print(f"{i + 1}: {app_lines[i]}")
 app_path.write_text(app, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
 print("Rebuilt sign-in and sign-up as a single responsive form card.")
