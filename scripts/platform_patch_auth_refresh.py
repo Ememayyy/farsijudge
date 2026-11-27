@@ -11,7 +11,7 @@ css = css_path.read_text(encoding="utf-8")
 if "FJ AUTH EXPERIENCE v2" in css:
     raise SystemExit("Authentication refresh has already been applied.")
 
-# Remove marketing content but move account-mode control into the form card.
+# Remove only the complete marketing panel; leave the existing auth mode control intact.
 visual_start_marker = '      <div className="auth-visual">'
 form_start_marker = '        <div className="auth-form-wrap">'
 if app.count(visual_start_marker) != 1 or app.count(form_start_marker) != 1:
@@ -20,7 +20,6 @@ visual_start = app.index(visual_start_marker)
 form_start = app.index(form_start_marker, visual_start)
 if form_start <= visual_start:
     raise SystemExit("Authentication form appears before the visual panel.")
-app = app[:visual_start] + app[form_start:]
 
 def find_div_end(source: str, start: int) -> int:
     tags = re.compile(r"</?div\b[^>]*>")
@@ -33,21 +32,12 @@ def find_div_end(source: str, start: int) -> int:
                 return match.end()
         elif not token.rstrip().endswith("/>"):
             depth += 1
-    raise SystemExit("Could not find the end of the authentication form container.")
+    raise SystemExit("Could not find the end of the authentication marketing panel.")
 
-form_start = app.index(form_start_marker)
-form_end = find_div_end(app, form_start)
-if "auth-mode-switch" in app:
-    raise SystemExit("Authentication mode switch already exists.")
-mode_switch = """
-          <div className="auth-mode-switch">
-            <span>{authMode === 'login' ? 'هنوز حساب کاربری نداری؟' : 'قبلاً حساب ساخته‌ای؟'}</span>
-            <button type="button" onClick={() => setAuthMode((authMode === 'login' ? 'signup' : 'login') as typeof authMode)}>
-              {authMode === 'login' ? 'ساخت حساب کاربری' : 'ورود به حساب'}
-            </button>
-          </div>
-"""
-app = app[:form_end - len("</div>")] + mode_switch + app[form_end - len("</div>"):]
+visual_end = find_div_end(app, visual_start)
+if visual_end > form_start:
+    raise SystemExit("Authentication marketing panel unexpectedly contains the form.")
+app = app[:visual_start] + app[visual_end:]
 
 brand_match = re.search(r'(<div className="mobile-brand">.*?</span>)<b>فارسی جاج</b></div>', app, re.S)
 if brand_match:
@@ -55,6 +45,8 @@ if brand_match:
     app = app[:brand_match.start()] + replacement + app[brand_match.end():]
 if "mobile-brand" not in app or "auth-form-wrap" not in app:
     raise SystemExit("Authentication brand or form disappeared during cleanup.")
+if "setAuthMode(authMode === 'login' ? 'register' : 'login')" not in app:
+    raise SystemExit("Existing sign-in / sign-up mode switch was not preserved.")
 
 css += r"""
 
@@ -194,31 +186,6 @@ css += r"""
 .auth-shell .auth-form-wrap .muted.small { font-size:11px; line-height:1.8; }
 .auth-shell .auth-form-wrap button,
 .auth-shell .auth-form-wrap a { touch-action:manipulation; }
-.auth-mode-switch {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-wrap:wrap;
-  gap:5px 8px;
-  margin-top:24px;
-  padding-top:17px;
-  border-top:1px solid var(--line);
-  color:var(--muted);
-  font-size:11px;
-  line-height:1.8;
-}
-.auth-mode-switch button {
-  min-height:34px;
-  padding:4px 7px;
-  border:0;
-  background:transparent;
-  color:var(--fj-violet,var(--accent));
-  font:inherit;
-  font-weight:900;
-  cursor:pointer;
-}
-.auth-mode-switch button:hover { text-decoration:underline; }
-
 @media (max-width:700px) {
   .auth-shell {
     min-height:100svh !important;
@@ -267,11 +234,6 @@ css += r"""
   }
 }
 """
-mode_line = next(i for i, line in enumerate(app.splitlines(), 1) if "auth-mode-switch" in line)
-app_lines = app.splitlines()
-print("AUTH MODE SWITCH CONTEXT:")
-for i in range(max(0, mode_line - 7), min(len(app_lines), mode_line + 10)):
-    print(f"{i + 1}: {app_lines[i]}")
 app_path.write_text(app, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
 print("Rebuilt sign-in and sign-up as a single responsive form card.")
