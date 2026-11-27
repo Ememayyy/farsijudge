@@ -299,6 +299,15 @@ css += r"""
   }
 }
 
+/* Large desktop: add breathing room without stretching the fields edge to edge. */
+@media (min-width:1101px) {
+  .auth-shell > .auth-form-wrap {
+    width:min(100%,880px);
+    max-width:880px;
+    padding:58px 82px 54px;
+  }
+}
+
 /* Short viewports scroll naturally instead of clipping the register form. */
 @media (max-height:660px) {
   .auth-shell {
