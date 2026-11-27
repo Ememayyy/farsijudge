@@ -191,7 +191,20 @@ if APP.is_file():
         check(visual_contract in (ROOT / "src" / "style.css").read_text(encoding="utf-8"),
               f"Visual refresh contract is missing: {visual_contract}.")
     check("فکر کن. حل کن." in app and "رتبه‌ات را بساز." in app, "The new contest hub headline is missing.")
-    check("هر مسئله،" in app, "The redesigned authentication headline is missing.")
+    check('className="auth-visual"' not in app and 'className="auth-visual-content"' not in app,
+          "The repeated authentication marketing panel must be removed from the JSX.")
+    check("auth-mode-switch" in app and "setAuthMode" in app and "ساخت حساب کاربری" in app,
+          "The redesigned auth form must retain a working sign-in / sign-up switch.")
+    auth_refresh_css = full_redesign_css[full_redesign_css.find("FJ AUTH EXPERIENCE v2"):]
+    check(bool(auth_refresh_css), "The final authentication redesign CSS is missing.")
+    for auth_contract in (
+        ".auth-shell > .auth-form-wrap",
+        ".auth-shell .mobile-brand",
+        ".auth-mode-switch",
+        "@media (max-width:700px)",
+        "font-size:16px !important",
+    ):
+        check(auth_contract in auth_refresh_css, f"Authentication mobile layout contract is missing: {auth_contract}.")
 
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
           "Contest designer is missing quick topic presets.")
