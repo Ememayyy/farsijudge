@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import re
 """Replace the split authentication marketing panel with a focused, responsive auth card."""
+import re
 from pathlib import Path
 
 app_path = Path("src/App.tsx")
@@ -215,8 +215,6 @@ css += r"""
   }
   .auth-shell .auth-form-wrap .button { min-height:48px !important; }
   .auth-shell .auth-form-wrap .field-label { font-size:11px; }
-  .auth-mode-switch { margin-top:20px; padding-top:14px; gap:3px 6px; }
-  .auth-mode-switch button { min-height:40px; }
 }
 @media (max-width:380px) {
   .auth-shell { padding-inline:9px !important; }
