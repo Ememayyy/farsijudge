@@ -217,6 +217,17 @@ if APP.is_file():
         check(desktop_auth_contract in auth_desktop_css,
               f"Desktop authentication layout contract is missing: {desktop_auth_contract}.")
 
+    auth_width_css = full_redesign_css[full_redesign_css.find("FJ AUTH WIDTH EXPERIENCE v1"):]
+    check(bool(auth_width_css), "The wider authentication layout overrides are missing.")
+    for auth_width_contract in (
+        "width:min(100%,600px) !important",
+        "max-width:620px !important",
+        "@media (max-width:700px)",
+        "@media (max-width:380px)",
+    ):
+        check(auth_width_contract in auth_width_css,
+              f"Authentication width contract is missing: {auth_width_contract}.")
+
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
           "Contest designer is missing quick topic presets.")
     for tag in ("combinatorics", "algorithm", "programming", "graph", "algebra", "geometry"):
