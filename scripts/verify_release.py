@@ -197,49 +197,33 @@ if APP.is_file():
           "Authentication markup must not contain the rejected decorative desktop panel.")
     check("setAuthMode(authMode === 'login' ? 'register' : 'login')" in app,
           "The redesigned auth form must retain its existing sign-in / sign-up switch.")
-    auth_refresh_css = full_redesign_css[full_redesign_css.find("FJ AUTH EXPERIENCE v2"):]
-    check(bool(auth_refresh_css), "The final authentication redesign CSS is missing.")
+    auth_start = full_redesign_css.find("FJ AUTH RESPONSIVE SYSTEM v3")
+    auth_css = full_redesign_css[auth_start:] if auth_start >= 0 else ""
+    check(auth_start >= 0 and auth_css.count("FJ AUTH RESPONSIVE SYSTEM v3") == 1,
+          "Authentication layout must have exactly one consolidated responsive stylesheet.")
     for auth_contract in (
         ".auth-shell > .auth-form-wrap",
         ".auth-shell .mobile-brand",
-        "@media (max-width:700px)",
-        "font-size:16px !important",
-    ):
-        check(auth_contract in auth_refresh_css, f"Authentication mobile layout contract is missing: {auth_contract}.")
-    auth_desktop_css = full_redesign_css[full_redesign_css.find("FJ AUTH DESKTOP EXPERIENCE v2"): ]
-    check(bool(auth_desktop_css), "The desktop authentication layout CSS is missing.")
-    for desktop_auth_contract in (
-        ".auth-shell > .auth-form-wrap",
-        "width:min(100%,520px) !important",
-        "border-top:3px solid var(--fj-violet,var(--accent))",
-        "@media (min-width:701px)",
-    ):
-        check(desktop_auth_contract in auth_desktop_css,
-              f"Desktop authentication layout contract is missing: {desktop_auth_contract}.")
-
-    auth_width_css = full_redesign_css[full_redesign_css.find("FJ AUTH WIDTH EXPERIENCE v1"):]
-    check(bool(auth_width_css), "The wider authentication layout overrides are missing.")
-    for auth_width_contract in (
-        "width:min(100%,600px) !important",
-        "max-width:620px !important",
-        "@media (max-width:700px)",
-        "@media (max-width:380px)",
-    ):
-        check(auth_width_contract in auth_width_css,
-              f"Authentication width contract is missing: {auth_width_contract}.")
-
-    auth_full_width_css = full_redesign_css[full_redesign_css.find("FJ AUTH FULL-WIDTH EXPERIENCE v1"):]
-    check(bool(auth_full_width_css), "The edge-to-edge authentication layout is missing.")
-    for full_width_contract in (
-        "padding-inline:clamp(22px,2.1vw,42px) !important",
-        "width:100% !important",
-        "max-width:none !important",
+        "@media (max-width:760px)",
+        "@media (min-width:761px)",
+        "@media (min-width:761px) and (max-width:1100px)",
         "@media (min-width:1101px)",
-        "@media (min-width:701px) and (max-width:1100px)",
-        "@media (max-width:700px)",
+        "width:min(100%,880px)",
+        "max-width:620px",
+        "max-width:660px",
+        "font-size:16px",
+        "overflow-y:auto",
     ):
-        check(full_width_contract in auth_full_width_css,
-              f"Full-width authentication contract is missing: {full_width_contract}.")
+        check(auth_contract in auth_css,
+              f"Responsive authentication layout contract is missing: {auth_contract}.")
+    for obsolete_auth_marker in (
+        "FJ AUTH EXPERIENCE v2",
+        "FJ AUTH DESKTOP EXPERIENCE v2",
+        "FJ AUTH WIDTH EXPERIENCE v1",
+        "FJ AUTH FULL-WIDTH EXPERIENCE v1",
+    ):
+        check(obsolete_auth_marker not in full_redesign_css,
+              f"An obsolete layered authentication stylesheet remains: {obsolete_auth_marker}.")
 
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
           "Contest designer is missing quick topic presets.")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replace the split authentication marketing panel with a focused, responsive auth card."""
+"""Apply one consolidated responsive layout to the sign-in and sign-up screens."""
 import re
 from pathlib import Path
 
@@ -8,14 +8,14 @@ css_path = Path("src/style.css")
 app = app_path.read_text(encoding="utf-8")
 css = css_path.read_text(encoding="utf-8")
 
-if "FJ AUTH EXPERIENCE v2" in css:
-    raise SystemExit("Authentication refresh has already been applied.")
+if "FJ AUTH RESPONSIVE SYSTEM v3" in css:
+    raise SystemExit("The consolidated authentication layout has already been applied.")
 
-# Remove only the complete marketing panel; leave the existing auth mode control intact.
+# Remove only the old marketing panel. Keep the working form and auth-mode state.
 visual_start_marker = '      <div className="auth-visual">'
 form_start_marker = '        <div className="auth-form-wrap">'
 if app.count(visual_start_marker) != 1 or app.count(form_start_marker) != 1:
-    raise SystemExit("Expected one authentication marketing panel and one form panel.")
+    raise SystemExit("Expected exactly one auth marketing panel and one auth form.")
 visual_start = app.index(visual_start_marker)
 form_start = app.index(form_start_marker, visual_start)
 if form_start <= visual_start:
@@ -39,66 +39,77 @@ if visual_end > form_start:
     raise SystemExit("Authentication marketing panel unexpectedly contains the form.")
 app = app[:visual_start] + app[visual_end:]
 
-brand_match = re.search(r'(<div className="mobile-brand">.*?</span>)<b>فارسی جاج</b></div>', app, re.S)
+brand_match = re.search(
+    r'(<div className="mobile-brand">.*?</span>)<b>فارسی جاج</b></div>',
+    app,
+    re.S,
+)
 if brand_match:
     replacement = brand_match.group(1) + '<span><b>فارسی جاج</b><small>FARSI JUDGE</small></span></div>'
     app = app[:brand_match.start()] + replacement + app[brand_match.end():]
+
 if "mobile-brand" not in app or "auth-form-wrap" not in app:
     raise SystemExit("Authentication brand or form disappeared during cleanup.")
 if "setAuthMode(authMode === 'login' ? 'register' : 'login')" not in app:
-    raise SystemExit("Existing sign-in / sign-up mode switch was not preserved.")
+    raise SystemExit("The existing sign-in / sign-up switch was not preserved.")
 
 css += r"""
 
-/* FJ AUTH EXPERIENCE v2 — one focused sign-in / sign-up surface */
+/* FJ AUTH RESPONSIVE SYSTEM v3 — one source of truth for phone, tablet and desktop */
+.auth-shell,
+.auth-shell * {
+  box-sizing:border-box;
+}
 .auth-shell {
-  position:relative !important;
+  position:relative;
   isolation:isolate;
-  width:100% !important;
-  max-width:100% !important;
-  min-width:0 !important;
-  min-height:100svh !important;
-  height:auto !important;
-  margin:0 !important;
-  padding:clamp(22px,5vh,54px) 18px !important;
-  display:grid !important;
-  grid-template-columns:minmax(0,1fr) !important;
-  place-items:center !important;
-  overflow-x:clip !important;
-  overflow-y:auto !important;
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  place-items:center;
+  width:100%;
+  min-width:0;
+  min-height:100vh;
+  min-height:100svh;
+  height:auto;
+  margin:0;
+  padding:clamp(22px,5vh,54px) 16px;
+  overflow-x:clip;
+  overflow-y:auto;
   background:
     radial-gradient(ellipse at 50% 0%,rgba(146,112,255,.14),transparent 34rem),
     radial-gradient(ellipse at 8% 90%,rgba(89,190,225,.07),transparent 27rem),
-    var(--bg) !important;
+    var(--bg);
 }
-.auth-shell > .auth-visual { display:none !important; }
+.auth-shell > .auth-visual {
+  display:none;
+}
 .auth-shell > .auth-form-wrap {
   position:relative;
   z-index:1;
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:stretch !important;
-  justify-content:center !important;
-  width:min(100%,470px) !important;
-  max-width:470px !important;
-  min-width:0 !important;
-  min-height:0 !important;
-  height:auto !important;
-  margin:0 auto !important;
-  padding:clamp(23px,4.5vw,43px) !important;
-  border:1px solid var(--fj-border,var(--line)) !important;
-  border-radius:23px !important;
-  background:var(--panel) !important;
-  box-shadow:0 26px 78px rgba(0,0,0,.16),0 4px 18px rgba(100,75,180,.07) !important;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:center;
+  width:min(100%,620px);
+  max-width:620px;
+  min-width:0;
+  min-height:0;
+  height:auto;
+  margin:0 auto;
+  padding:clamp(22px,4.5vw,40px);
+  border:1px solid var(--fj-border,var(--line));
+  border-radius:21px;
+  background:var(--panel);
+  box-shadow:0 24px 68px rgba(0,0,0,.14),0 4px 16px rgba(100,75,180,.06);
 }
 .auth-shell .mobile-brand {
-  display:flex !important;
-  align-items:center !important;
-  justify-content:flex-start !important;
-  gap:11px !important;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:11px;
   width:100%;
-  margin:0 0 29px !important;
-  padding:0 0 19px;
+  margin:0 0 25px;
+  padding:0 0 17px;
   border-bottom:1px solid var(--line);
   color:var(--text);
 }
@@ -113,7 +124,10 @@ css += r"""
   flex-direction:column;
   gap:3px;
 }
-.auth-shell .mobile-brand b { font-size:15px; font-weight:950; }
+.auth-shell .mobile-brand b {
+  font-size:15px;
+  font-weight:950;
+}
 .auth-shell .mobile-brand small {
   color:var(--muted);
   direction:ltr;
@@ -123,22 +137,22 @@ css += r"""
   letter-spacing:1.4px;
 }
 .auth-shell .auth-form-wrap > .eyebrow {
-  margin:0 0 7px !important;
+  margin:0 0 7px;
   color:var(--fj-violet,var(--accent));
   font-size:10px;
   font-weight:900;
   letter-spacing:.35px;
 }
 .auth-shell .auth-form-wrap > h2 {
-  margin:0 0 7px !important;
+  margin:0 0 7px;
   color:var(--text);
-  font-size:clamp(25px,3vw,31px) !important;
+  font-size:clamp(25px,3vw,31px);
   font-weight:950;
   line-height:1.45;
   letter-spacing:-.6px;
 }
 .auth-shell .auth-form-wrap .auth-subtitle {
-  margin:0 0 24px !important;
+  margin:0 0 22px;
   color:var(--muted);
   font-size:12px;
   line-height:1.9;
@@ -146,7 +160,7 @@ css += r"""
 .auth-shell .auth-form-wrap form {
   display:flex;
   flex-direction:column;
-  gap:14px !important;
+  gap:13px;
   width:100%;
 }
 .auth-shell .auth-form-wrap .field-label {
@@ -160,13 +174,13 @@ css += r"""
 .auth-shell .auth-form-wrap input {
   width:100%;
   min-width:0;
-  min-height:49px !important;
+  min-height:49px;
   padding:0 13px;
   border:1px solid var(--line);
   border-radius:11px;
   background:var(--panel-2);
   color:var(--text);
-  font-size:15px;
+  font-size:16px;
   outline:none;
   transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
 }
@@ -176,62 +190,131 @@ css += r"""
   box-shadow:0 0 0 4px rgba(146,112,255,.12);
 }
 .auth-shell .auth-form-wrap .button {
-  min-height:49px !important;
+  min-height:49px;
   justify-content:center;
   border-radius:11px;
   font-size:12px;
   font-weight:900;
 }
-.auth-shell .auth-form-wrap .welcome-back-link { margin-top:9px; }
-.auth-shell .auth-form-wrap .muted.small { font-size:11px; line-height:1.8; }
+.auth-shell .auth-form-wrap .welcome-back-link {
+  margin-top:9px;
+}
+.auth-shell .auth-form-wrap .muted.small {
+  font-size:11px;
+  line-height:1.8;
+}
 .auth-shell .auth-form-wrap button,
-.auth-shell .auth-form-wrap a { touch-action:manipulation; }
-@media (max-width:700px) {
+.auth-shell .auth-form-wrap a {
+  touch-action:manipulation;
+}
+
+/* Phone: keep a single column, narrow outer gutters and comfortable touch targets. */
+@media (max-width:760px) {
   .auth-shell {
-    min-height:100svh !important;
-    padding:16px 12px calc(20px + env(safe-area-inset-bottom,0px)) !important;
-    place-items:center !important;
+    min-height:100svh;
+    padding:16px 8px calc(20px + env(safe-area-inset-bottom,0px));
+    place-items:center;
   }
   .auth-shell > .auth-form-wrap {
-    width:100% !important;
-    max-width:480px !important;
-    padding:22px 17px 25px !important;
-    border-radius:18px !important;
+    width:100%;
+    max-width:620px;
+    padding:22px 17px 25px;
+    border-radius:18px;
   }
   .auth-shell .mobile-brand {
-    margin-bottom:22px !important;
+    margin-bottom:21px;
     padding-bottom:15px;
   }
-  .auth-shell .auth-form-wrap > h2 { font-size:24px !important; }
+  .auth-shell .auth-form-wrap > h2 {
+    font-size:24px;
+  }
   .auth-shell .auth-form-wrap .auth-subtitle {
-    margin-bottom:19px !important;
+    margin-bottom:18px;
     font-size:11px;
   }
-  .auth-shell .auth-form-wrap form { gap:12px !important; }
-  .auth-shell .auth-form-wrap input {
-    min-height:48px !important;
-    padding-inline:12px;
-    font-size:16px !important;
+  .auth-shell .auth-form-wrap form {
+    gap:12px;
   }
-  .auth-shell .auth-form-wrap .button { min-height:48px !important; }
-  .auth-shell .auth-form-wrap .field-label { font-size:11px; }
+  .auth-shell .auth-form-wrap input,
+  .auth-shell .auth-form-wrap .button {
+    min-height:48px;
+  }
+  .auth-shell .auth-form-wrap .field-label {
+    font-size:11px;
+  }
 }
-@media (max-width:380px) {
-  .auth-shell { padding-inline:9px !important; }
-  .auth-shell > .auth-form-wrap { padding:19px 14px 21px !important; }
-  .auth-shell .mobile-brand { margin-bottom:18px !important; }
+
+/* Desktop: a wider centered card, with the form itself kept at a readable line length. */
+@media (min-width:761px) {
+  .auth-shell {
+    padding:clamp(34px,5vh,64px) clamp(28px,5vw,88px);
+  }
+  .auth-shell > .auth-form-wrap {
+    width:min(100%,880px);
+    max-width:880px;
+    padding:52px clamp(48px,6vw,76px) 48px;
+    border-radius:24px;
+  }
+  .auth-shell .mobile-brand {
+    margin-bottom:32px;
+    padding-bottom:20px;
+  }
+  .auth-shell .auth-form-wrap > .eyebrow {
+    font-size:11px;
+  }
+  .auth-shell .auth-form-wrap > h2 {
+    font-size:32px;
+  }
+  .auth-shell .auth-form-wrap .auth-subtitle {
+    margin-bottom:28px;
+    font-size:13px;
+  }
+  .auth-shell .auth-form-wrap form {
+    max-width:660px;
+    margin-inline:auto;
+    gap:17px;
+  }
+  .auth-shell .auth-form-wrap .field-label {
+    gap:9px;
+    font-size:12px;
+  }
+  .auth-shell .auth-form-wrap input,
+  .auth-shell .auth-form-wrap .button {
+    min-height:54px;
+  }
+  .auth-shell .auth-form-wrap .welcome-back-link {
+    margin-top:13px;
+  }
 }
-@media (max-height:650px) {
-  .auth-shell { place-items:start center !important; padding-block:14px !important; }
-  .auth-shell > .auth-form-wrap { margin-block:auto !important; }
+
+/* Tablet / compact desktop: reduce the card width and horizontal padding gradually. */
+@media (min-width:761px) and (max-width:1100px) {
+  .auth-shell {
+    padding-inline:24px;
+  }
+  .auth-shell > .auth-form-wrap {
+    width:min(100%,720px);
+    max-width:720px;
+    padding:40px 46px;
+  }
+}
+
+/* Short viewports scroll naturally instead of clipping the register form. */
+@media (max-height:660px) {
+  .auth-shell {
+    place-items:start center;
+    padding-block:14px;
+  }
 }
 @media (prefers-reduced-motion:reduce) {
-  .auth-shell *, .auth-shell *::before, .auth-shell *::after {
-    transition-duration:.01ms !important;
-    animation-duration:.01ms !important;
+  .auth-shell *,
+  .auth-shell *::before,
+  .auth-shell *::after {
+    transition-duration:.01ms;
+    animation-duration:.01ms;
   }
 }
 """
 app_path.write_text(app, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
-print("Rebuilt sign-in and sign-up as a single responsive form card.")
+print("Applied the consolidated responsive authentication layout.")
