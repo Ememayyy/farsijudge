@@ -153,6 +153,25 @@ if APP.is_file():
         check(layout_contract in full_redesign_css, f"Full redesign responsive layout is missing: {layout_contract}.")
     for content_contract in ("CONTEST WORKSPACE", "فهرست مسابقه‌ها", "مسابقه‌های عمومی", "مسابقهٔ پیش‌رو"):
         check(content_contract in app, f"Full redesign content contract is missing: {content_contract}.")
+    mobile_css = full_redesign_css[full_redesign_css.find("FJ MOBILE-FIRST NAVIGATION v3"):]
+    check(bool(mobile_css), "Final mobile-first overrides are missing.")
+    for mobile_contract in (
+        ".oj-app-shell.sidebar-open .sidebar",
+        ".oj-app-shell .mobile-signout-button",
+        ".oj-app-shell .sidebar-scrim",
+        "overflow-y:auto !important",
+        "grid-template-columns:minmax(0,1fr) !important",
+        "font-size:16px !important",
+    ):
+        check(mobile_contract in mobile_css, f"Mobile usability contract is missing: {mobile_contract}.")
+    check("mobile-signout-button" in app and "await supabase.auth.signOut()" in app,
+          "The mobile app bar must provide a direct sign-out action.")
+    check("aria-expanded={sidebarOpen}" in app and "setSidebarOpen((open) => !open)" in app,
+          "The mobile drawer toggle must expose and toggle its open state.")
+    check("window.addEventListener('keydown', closeOnEscape)" in app,
+          "The mobile drawer must be dismissible with Escape.")
+    check(full_redesign_css.rfind("FJ MOBILE-FIRST NAVIGATION v3") > full_redesign_css.find("FJ SECOND GENERATION"),
+          "Mobile-first overrides must be appended after the desktop layout rules.")
     for visual_contract in (
         "FARSIJUDGE VISUAL SYSTEM",
         ".public-hero h1",
