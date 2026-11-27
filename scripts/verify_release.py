@@ -193,8 +193,8 @@ if APP.is_file():
     check("فکر کن. حل کن." in app and "رتبه‌ات را بساز." in app, "The new contest hub headline is missing.")
     check('className="auth-visual"' not in app and 'className="auth-visual-content"' not in app,
           "The repeated authentication marketing panel must be removed from the JSX.")
-    check('className="auth-desktop-panel"' not in app,
-          "Authentication markup must not contain the rejected decorative desktop panel.")
+    check('className="auth-desktop-panel"' in app,
+          "The dedicated desktop authentication composition is missing.")
     check("setAuthMode(authMode === 'login' ? 'register' : 'login')" in app,
           "The redesigned auth form must retain its existing sign-in / sign-up switch.")
     auth_refresh_css = full_redesign_css[full_redesign_css.find("FJ AUTH EXPERIENCE v2"):]
@@ -240,6 +240,27 @@ if APP.is_file():
     ):
         check(full_width_contract in auth_full_width_css,
               f"Full-width authentication contract is missing: {full_width_contract}.")
+
+    auth_responsive_css = full_redesign_css[full_redesign_css.find("FJ AUTH RESPONSIVE REDESIGN v3"):]
+    check(bool(auth_responsive_css), "The separate desktop and mobile authentication redesign is missing.")
+    for responsive_auth_contract in (
+        "grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr)",
+        ".auth-shell > .auth-desktop-panel",
+        "@media (min-width:981px)",
+        "@media (max-width:700px)",
+        ".auth-shell::before",
+        "max-width:570px !important",
+        "env(safe-area-inset-bottom,0px)",
+        "@media (max-height:620px)",
+    ):
+        check(responsive_auth_contract in auth_responsive_css,
+              f"Responsive authentication contract is missing: {responsive_auth_contract}.")
+    for panel_contract in (
+        'className="auth-panel-brand"',
+        'className="auth-panel-art"',
+        'className="auth-panel-title"',
+    ):
+        check(panel_contract in app, f"Desktop authentication panel is missing {panel_contract}.")
 
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
           "Contest designer is missing quick topic presets.")
