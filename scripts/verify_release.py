@@ -193,8 +193,8 @@ if APP.is_file():
     check("فکر کن. حل کن." in app and "رتبه‌ات را بساز." in app, "The new contest hub headline is missing.")
     check('className="auth-visual"' not in app and 'className="auth-visual-content"' not in app,
           "The repeated authentication marketing panel must be removed from the JSX.")
-    check('className="auth-desktop-panel"' in app,
-          "The desktop authentication brand panel is missing.")
+    check('className="auth-desktop-panel"' not in app,
+          "Authentication markup must not contain the rejected decorative desktop panel.")
     check("setAuthMode(authMode === 'login' ? 'register' : 'login')" in app,
           "The redesigned auth form must retain its existing sign-in / sign-up switch.")
     auth_refresh_css = full_redesign_css[full_redesign_css.find("FJ AUTH EXPERIENCE v2"):]
@@ -206,13 +206,13 @@ if APP.is_file():
         "font-size:16px !important",
     ):
         check(auth_contract in auth_refresh_css, f"Authentication mobile layout contract is missing: {auth_contract}.")
-    auth_desktop_css = full_redesign_css[full_redesign_css.find("FJ AUTH DESKTOP EXPERIENCE v1"):]
+    auth_desktop_css = full_redesign_css[full_redesign_css.find("FJ AUTH DESKTOP EXPERIENCE v2"): ]
     check(bool(auth_desktop_css), "The desktop authentication layout CSS is missing.")
     for desktop_auth_contract in (
-        ".auth-shell > .auth-desktop-panel",
-        ".auth-desktop-art-core",
-        "grid-template-columns:minmax(0,1.08fr) minmax(440px,.92fr)",
-        ".auth-shell > .auth-desktop-panel { display:none !important; }",
+        ".auth-shell > .auth-form-wrap",
+        "width:min(100%,520px) !important",
+        "border-top:3px solid var(--fj-violet,var(--accent))",
+        "@media (min-width:701px)",
     ):
         check(desktop_auth_contract in auth_desktop_css,
               f"Desktop authentication layout contract is missing: {desktop_auth_contract}.")
