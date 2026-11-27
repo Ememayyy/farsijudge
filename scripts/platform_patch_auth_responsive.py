@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Replace the accumulated auth CSS with a coherent desktop/mobile experience."""
+"""Cleanly rebuild the auth markup and replace every accumulated auth override."""
+import re
 from pathlib import Path
 
 app_path = Path("src/App.tsx")
@@ -7,16 +8,37 @@ css_path = Path("src/style.css")
 app = app_path.read_text(encoding="utf-8")
 css = css_path.read_text(encoding="utf-8")
 
-if "FJ AUTH RESPONSIVE REDESIGN v3" in css:
-    raise SystemExit("The responsive authentication redesign is already present.")
-if 'className="auth-desktop-panel"' in app:
-    raise SystemExit("A previous desktop auth panel exists; refusing to duplicate it.")
+marker = "FJ AUTH RESPONSIVE REDESIGN v4"
+if marker in css:
+    raise SystemExit("The v4 authentication redesign is already present.")
+
+def element_end(source: str, start: int, tag: str) -> int:
+    tags = re.compile(rf"</?{tag}\b[^>]*>")
+    depth = 0
+    for match in tags.finditer(source, start):
+        token = match.group(0)
+        if token.startswith("</"):
+            depth -= 1
+            if depth == 0:
+                return match.end()
+        elif not token.rstrip().endswith("/>"):
+            depth += 1
+    raise SystemExit(f"Could not find closing tag for auth panel {tag}.")
+
+# Remove any old generated desktop panel, then insert exactly one fresh panel.
+panel_openings = list(re.finditer(r'<(div|aside)\b[^>]*className="auth-desktop-panel"[^>]*>', app))
+if len(panel_openings) > 1:
+    raise SystemExit("Multiple old desktop auth panels found; refusing ambiguous cleanup.")
+if panel_openings:
+    match = panel_openings[0]
+    end = element_end(app, match.start(), match.group(1))
+    app = app[:match.start()] + app[end:]
 
 form_marker = '        <div className="auth-form-wrap">'
 if app.count(form_marker) != 1:
-    raise SystemExit("Expected exactly one authentication form wrapper.")
-if "setAuthMode(authMode === 'login' ? 'register' : 'login')" not in app:
-    raise SystemExit("Existing sign-in / sign-up switch was not found.")
+    raise SystemExit("Expected exactly one auth form wrapper.")
+if "mobile-brand" not in app or "setAuthMode(authMode === 'login' ? 'register' : 'login')" not in app:
+    raise SystemExit("Existing auth branding or login/register switch is missing.")
 
 panel = """      <aside className="auth-desktop-panel" aria-hidden="true">
         <div className="auth-panel-top">
@@ -44,32 +66,42 @@ panel = """      <aside className="auth-desktop-panel" aria-hidden="true">
 """
 app = app.replace(form_marker, panel + form_marker, 1)
 
-css += r"""
+# Auth styles are appended last in the build pipeline. Replace that entire tail,
+# rather than adding yet another override on top of previous versions.
+old_auth = css.find("/* FJ AUTH EXPERIENCE v2")
+if old_auth < 0:
+    raise SystemExit("Could not locate the accumulated auth CSS tail.")
+css = css[:old_auth] + r"""
 
-/* FJ AUTH RESPONSIVE REDESIGN v3 — independent desktop and mobile compositions */
+/* FJ AUTH RESPONSIVE REDESIGN v4 — two deliberately different layouts */
+.auth-shell {
+  box-sizing:border-box !important;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  min-height:100svh !important;
+  margin:0 !important;
+  overflow-x:hidden !important;
+  background:var(--bg) !important;
+}
 .auth-shell > .auth-desktop-panel { display:none !important; }
-.auth-shell > .auth-form-wrap { box-sizing:border-box !important; }
+.auth-shell > .auth-form-wrap { box-sizing:border-box !important; min-width:0 !important; }
 
-@media (min-width:981px) {
+/* Desktop: a real two-panel composition, with the form and brand occupying
+   separate halves of a centered canvas. */
+@media (min-width:980px) {
   .auth-shell {
-    position:relative !important;
-    isolation:isolate;
     direction:ltr !important;
     display:grid !important;
-    grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr) !important;
+    grid-template-columns:minmax(0,.96fr) minmax(0,1.04fr) !important;
     align-items:stretch !important;
-    gap:clamp(16px,2vw,28px) !important;
-    width:min(1600px,100%) !important;
-    max-width:1600px !important;
-    min-height:100svh !important;
-    height:auto !important;
-    margin:0 auto !important;
-    padding:clamp(18px,2.1vw,32px) !important;
-    overflow-x:clip !important;
-    overflow-y:auto !important;
-    background:
-      radial-gradient(ellipse at 12% 12%,rgba(140,112,240,.10),transparent 32rem),
-      var(--bg) !important;
+    gap:22px !important;
+    width:min(1480px,calc(100% - 64px)) !important;
+    max-width:1480px !important;
+    min-height:calc(100svh - 64px) !important;
+    margin:32px auto !important;
+    padding:0 !important;
+    background:transparent !important;
   }
   .auth-shell > .auth-form-wrap {
     grid-column:1 !important;
@@ -81,24 +113,27 @@ css += r"""
     justify-content:center !important;
     width:100% !important;
     max-width:none !important;
-    min-width:0 !important;
-    min-height:calc(100svh - clamp(36px,4.2vw,64px)) !important;
+    min-height:calc(100svh - 64px) !important;
     height:auto !important;
     margin:0 !important;
-    padding:clamp(30px,4.2vw,64px) !important;
+    padding:clamp(34px,4vw,62px) !important;
     border:1px solid var(--line) !important;
-    border-radius:28px !important;
+    border-radius:26px !important;
     border-top:1px solid var(--line) !important;
     background:var(--panel) !important;
-    box-shadow:0 24px 75px rgba(15,20,40,.09) !important;
-  }
-  .auth-shell .auth-form-wrap > *:not(.mobile-brand) {
-    width:100%;
-    max-width:510px;
-    margin-left:auto;
-    margin-right:auto;
+    box-shadow:0 18px 58px rgba(12,18,38,.10) !important;
   }
   .auth-shell .mobile-brand { display:none !important; }
+  .auth-shell .auth-form-wrap > .eyebrow,
+  .auth-shell .auth-form-wrap > h2,
+  .auth-shell .auth-form-wrap > .auth-subtitle,
+  .auth-shell .auth-form-wrap > form,
+  .auth-shell .auth-form-wrap > .welcome-back-link {
+    width:100%;
+    max-width:500px;
+    margin-left:auto !important;
+    margin-right:auto !important;
+  }
   .auth-shell .auth-form-wrap > .eyebrow {
     margin-top:0 !important;
     margin-bottom:9px !important;
@@ -107,24 +142,25 @@ css += r"""
     font-weight:900;
   }
   .auth-shell .auth-form-wrap > h2 {
-    margin:0 0 8px !important;
+    margin-top:0 !important;
+    margin-bottom:8px !important;
     color:var(--text);
-    font-size:clamp(27px,2.3vw,34px) !important;
-    line-height:1.5;
+    font-size:clamp(28px,2.4vw,35px) !important;
     font-weight:950;
+    line-height:1.5;
   }
   .auth-shell .auth-form-wrap .auth-subtitle {
-    margin:0 0 27px !important;
+    margin-top:0 !important;
+    margin-bottom:27px !important;
     color:var(--muted);
     font-size:13px !important;
-    line-height:2;
+    line-height:1.95;
   }
   .auth-shell .auth-form-wrap form {
     display:flex;
     flex-direction:column;
     gap:16px !important;
     width:100%;
-    margin:0 auto;
   }
   .auth-shell .auth-form-wrap .field-label {
     display:flex;
@@ -138,8 +174,8 @@ css += r"""
     box-sizing:border-box;
     width:100%;
     min-width:0;
-    min-height:53px !important;
-    padding-inline:15px !important;
+    min-height:54px !important;
+    padding:0 15px !important;
     border:1px solid var(--line);
     border-radius:12px;
     background:var(--panel-2);
@@ -149,16 +185,15 @@ css += r"""
   .auth-shell .auth-form-wrap input:focus {
     border-color:var(--fj-violet,var(--accent));
     outline:0;
-    box-shadow:0 0 0 4px rgba(135,111,232,.12);
+    box-shadow:0 0 0 4px rgba(137,112,232,.12);
   }
   .auth-shell .auth-form-wrap .button {
-    min-height:53px !important;
+    min-height:54px !important;
     margin-top:4px;
     border-radius:12px;
     font-size:13px;
     font-weight:900;
   }
-  .auth-shell .auth-form-wrap .welcome-back-link { margin-top:13px !important; }
   .auth-shell .auth-form-wrap button,
   .auth-shell .auth-form-wrap a { touch-action:manipulation; }
 
@@ -171,64 +206,63 @@ css += r"""
     flex-direction:column;
     justify-content:space-between;
     min-width:0;
-    min-height:calc(100svh - clamp(36px,4.2vw,64px));
+    min-height:calc(100svh - 64px);
     padding:clamp(30px,3.5vw,54px);
     overflow:hidden;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:28px;
+    border:1px solid rgba(255,255,255,.11);
+    border-radius:26px;
     direction:rtl;
     color:#fff;
     background:
-      radial-gradient(ellipse at 75% 23%,rgba(150,127,255,.26),transparent 23rem),
-      radial-gradient(ellipse at 12% 83%,rgba(80,178,219,.17),transparent 24rem),
-      linear-gradient(150deg,#17172b 0%,#20223c 54%,#252b49 100%);
+      radial-gradient(ellipse at 76% 20%,rgba(160,139,255,.29),transparent 24rem),
+      radial-gradient(ellipse at 14% 84%,rgba(78,185,219,.18),transparent 25rem),
+      linear-gradient(145deg,#18182d 0%,#22243f 58%,#292d4a 100%);
   }
   .auth-shell > .auth-desktop-panel::before {
     position:absolute;
     z-index:-1;
     inset:0;
     content:"";
-    opacity:.16;
+    opacity:.18;
     background-image:
-      linear-gradient(rgba(255,255,255,.10) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(255,255,255,.10) 1px,transparent 1px);
-    background-size:42px 42px;
-    mask-image:linear-gradient(135deg,#000 0%,transparent 86%);
+      linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px);
+    background-size:40px 40px;
+    mask-image:linear-gradient(145deg,#000,transparent 85%);
   }
   .auth-shell > .auth-desktop-panel::after {
     position:absolute;
     z-index:-1;
     width:430px;
     height:430px;
-    left:-250px;
+    left:-245px;
     bottom:-285px;
     content:"";
-    border:1px solid rgba(186,174,255,.22);
+    border:1px solid rgba(188,177,255,.2);
     border-radius:50%;
-    box-shadow:0 0 0 36px rgba(186,174,255,.035),0 0 0 82px rgba(186,174,255,.025);
+    box-shadow:0 0 0 38px rgba(188,177,255,.035),0 0 0 82px rgba(188,177,255,.025);
   }
   .auth-panel-top,.auth-panel-brand,.auth-panel-brand-copy,.auth-panel-bottom {
     display:flex;
     align-items:center;
   }
-  .auth-panel-top { justify-content:space-between; gap:15px; }
+  .auth-panel-top { justify-content:space-between; gap:14px; }
   .auth-panel-brand { gap:12px; }
   .auth-panel-brand-mark {
-    display:grid;
-    place-items:center;
+    display:block;
     width:48px;
     height:48px;
     overflow:hidden;
-    border:1px solid rgba(255,255,255,.28);
+    border:1px solid rgba(255,255,255,.22);
     border-radius:15px;
     background:#fff;
-    box-shadow:0 9px 24px rgba(0,0,0,.20);
+    box-shadow:0 9px 24px rgba(0,0,0,.18);
   }
   .auth-panel-brand-mark img { width:100%; height:100%; object-fit:contain; }
   .auth-panel-brand-copy { flex-direction:column; align-items:flex-start; gap:4px; }
   .auth-panel-brand-copy b { color:#fff; font-size:16px; font-weight:950; }
   .auth-panel-brand-copy small {
-    color:rgba(236,232,255,.60);
+    color:rgba(238,235,255,.62);
     direction:ltr;
     font-size:8px;
     font-weight:850;
@@ -238,24 +272,23 @@ css += r"""
     padding:8px 11px;
     border:1px solid rgba(255,255,255,.14);
     border-radius:999px;
-    color:rgba(241,239,255,.68);
+    color:rgba(241,239,255,.7);
     direction:ltr;
     font-size:8px;
     font-weight:850;
     letter-spacing:1.3px;
   }
   .auth-panel-center {
-    position:relative;
     display:flex;
     flex:1;
     flex-direction:column;
     justify-content:center;
     min-height:0;
-    padding:28px 0;
+    padding:24px 0;
   }
   .auth-panel-kicker {
-    margin-bottom:15px;
-    color:#b9adff;
+    margin-bottom:14px;
+    color:#bcb0ff;
     direction:ltr;
     text-align:right;
     font-size:9px;
@@ -267,85 +300,80 @@ css += r"""
     z-index:2;
     margin:0;
     color:#fff;
-    font-size:clamp(38px,4.1vw,62px);
+    font-size:clamp(40px,4.4vw,66px);
     font-weight:950;
-    line-height:1.38;
-    letter-spacing:-1.8px;
+    line-height:1.4;
+    letter-spacing:-1.5px;
   }
-  .auth-panel-title span {
-    color:#b9adff;
-    text-shadow:0 8px 35px rgba(144,121,255,.20);
-  }
+  .auth-panel-title span { color:#bcb0ff; }
   .auth-panel-art {
     position:relative;
-    width:min(100%,370px);
-    aspect-ratio:1.42;
-    margin:8px auto 0;
     display:grid;
     place-items:center;
+    width:min(100%,390px);
+    aspect-ratio:1.55;
+    margin:8px auto 0;
   }
   .auth-art-orbit {
     position:absolute;
-    width:68%;
-    height:68%;
-    border:1px solid rgba(184,171,255,.22);
+    width:66%;
+    height:66%;
+    border:1px solid rgba(188,177,255,.25);
     border-radius:50%;
-    transform:rotate(-24deg) scaleX(.83);
   }
-  .auth-art-orbit-a { transform:rotate(-24deg) scaleX(.83); }
+  .auth-art-orbit-a { transform:rotate(-25deg) scaleX(.82); }
   .auth-art-orbit-b {
-    width:52%;
+    width:50%;
     height:92%;
-    border-color:rgba(123,207,232,.22);
-    transform:rotate(52deg) scaleX(.76);
+    border-color:rgba(126,210,233,.23);
+    transform:rotate(49deg) scaleX(.76);
   }
   .auth-art-line {
     position:absolute;
     width:88%;
     height:1px;
-    background:linear-gradient(90deg,transparent,rgba(189,177,255,.55),transparent);
-    transform:rotate(-17deg);
+    background:linear-gradient(90deg,transparent,rgba(188,177,255,.55),transparent);
+    transform:rotate(-16deg);
   }
   .auth-art-core {
     position:relative;
     z-index:2;
     display:grid;
     place-items:center;
-    width:108px;
-    height:108px;
-    padding:14px;
-    border:1px solid rgba(255,255,255,.33);
-    border-radius:30px;
-    background:linear-gradient(145deg,rgba(255,255,255,.20),rgba(133,111,229,.22));
-    box-shadow:0 24px 70px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.25);
-    backdrop-filter:blur(12px);
+    width:104px;
+    height:104px;
+    padding:13px;
+    border:1px solid rgba(255,255,255,.3);
+    border-radius:29px;
+    background:rgba(255,255,255,.13);
+    box-shadow:0 22px 65px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.22);
+    backdrop-filter:blur(10px);
   }
-  .auth-art-core img { width:100%; height:100%; object-fit:contain; border-radius:17px; }
+  .auth-art-core img { width:100%; height:100%; object-fit:contain; border-radius:15px; }
   .auth-art-node {
     position:absolute;
     z-index:3;
     display:grid;
     place-items:center;
-    width:48px;
-    height:48px;
+    width:47px;
+    height:47px;
     border:1px solid rgba(255,255,255,.17);
     border-radius:15px;
-    color:#f0edff;
+    color:#f2efff;
     background:rgba(255,255,255,.10);
-    box-shadow:0 12px 35px rgba(0,0,0,.17);
-    backdrop-filter:blur(10px);
+    box-shadow:0 12px 30px rgba(0,0,0,.18);
     font-size:15px;
     font-weight:900;
   }
-  .auth-art-node-a { top:9%; right:18%; }
-  .auth-art-node-b { bottom:12%; right:13%; color:#a8ead8; font-size:22px; }
-  .auth-art-node-c { top:20%; left:14%; font-size:14px; }
+  .auth-art-node-a { top:10%; right:18%; }
+  .auth-art-node-b { bottom:12%; right:13%; color:#a9ead8; font-size:22px; }
+  .auth-art-node-c { top:20%; left:14%; font-size:13px; }
   .auth-panel-bottom {
     justify-content:space-between;
     gap:12px;
     padding-top:17px;
     border-top:1px solid rgba(255,255,255,.14);
-    color:rgba(237,234,255,.55);
+    color:rgba(237,234,255,.56);
     direction:ltr;
     font-size:8px;
     font-weight:850;
@@ -353,13 +381,14 @@ css += r"""
   }
 }
 
-@media (min-width:701px) and (max-width:980px) {
+/* Tablet: keep one comfortable form card; do not squeeze the desktop split. */
+@media (min-width:701px) and (max-width:979px) {
   .auth-shell {
     display:flex !important;
     align-items:center !important;
     justify-content:center !important;
     min-height:100svh !important;
-    padding:24px !important;
+    padding:28px 24px !important;
     background:
       radial-gradient(ellipse at 50% 0%,rgba(140,112,240,.12),transparent 30rem),
       var(--bg) !important;
@@ -374,13 +403,13 @@ css += r"""
     padding:42px 48px !important;
     border:1px solid var(--line) !important;
     border-radius:25px !important;
-    border-top:1px solid var(--line) !important;
     background:var(--panel) !important;
     box-shadow:0 22px 68px rgba(15,20,40,.10) !important;
   }
   .auth-shell .mobile-brand { display:flex !important; }
 }
 
+/* Mobile: a colored brand header with a wide, floating form card below it. */
 @media (max-width:700px) {
   .auth-shell {
     position:relative !important;
@@ -395,7 +424,7 @@ css += r"""
     height:auto !important;
     margin:0 !important;
     padding:0 14px calc(22px + env(safe-area-inset-bottom,0px)) !important;
-    overflow-x:clip !important;
+    overflow-x:hidden !important;
     overflow-y:auto !important;
     background:var(--bg) !important;
   }
@@ -405,12 +434,12 @@ css += r"""
     top:0;
     left:0;
     right:0;
-    height:clamp(190px,30svh,245px);
+    height:clamp(185px,29svh,235px);
     content:"";
-    border-radius:0 0 30px 30px;
+    border-radius:0 0 28px 28px;
     background:
-      radial-gradient(circle at 82% 12%,rgba(191,174,255,.28),transparent 12rem),
-      linear-gradient(145deg,#242142 0%,#37305f 58%,#51478b 100%);
+      radial-gradient(circle at 82% 12%,rgba(191,174,255,.3),transparent 12rem),
+      linear-gradient(145deg,#242142 0%,#39315f 58%,#51478b 100%);
   }
   .auth-shell > .auth-desktop-panel { display:none !important; }
   .auth-shell > .auth-form-wrap {
@@ -425,8 +454,8 @@ css += r"""
     min-width:0 !important;
     min-height:0 !important;
     height:auto !important;
-    margin:clamp(34px,7svh,58px) auto 0 !important;
-    padding:25px clamp(18px,5vw,29px) 29px !important;
+    margin:clamp(34px,6svh,52px) auto 0 !important;
+    padding:26px clamp(18px,5vw,28px) 29px !important;
     border:1px solid var(--line) !important;
     border-radius:23px !important;
     border-top:1px solid var(--line) !important;
@@ -437,8 +466,8 @@ css += r"""
     display:flex !important;
     align-items:center !important;
     gap:11px !important;
-    margin:0 0 28px !important;
-    padding:0 0 18px !important;
+    margin:0 0 27px !important;
+    padding:0 0 17px !important;
     border-bottom:1px solid var(--line) !important;
     color:var(--text);
   }
@@ -506,16 +535,16 @@ css += r"""
     font-size:13px;
     font-weight:900;
   }
-  .auth-shell .auth-form-wrap .welcome-back-link { margin-top:11px !important; }
   .auth-shell .auth-form-wrap button,
   .auth-shell .auth-form-wrap a { touch-action:manipulation; }
+  .auth-shell .auth-form-wrap .welcome-back-link { margin-top:11px !important; }
 }
 
 @media (max-width:380px) {
   .auth-shell { padding-inline:10px !important; }
   .auth-shell > .auth-form-wrap {
     margin-top:25px !important;
-    padding:21px 16px 24px !important;
+    padding:22px 16px 24px !important;
     border-radius:20px !important;
   }
   .auth-shell .mobile-brand { margin-bottom:22px !important; }
@@ -530,8 +559,7 @@ css += r"""
   .auth-shell > .auth-form-wrap { padding-block:28px !important; }
   .auth-shell .auth-form-wrap .auth-subtitle { margin-bottom:16px !important; }
   .auth-shell .auth-form-wrap form { gap:11px !important; }
-  .auth-shell > .auth-desktop-panel { padding-block:24px; }
-  .auth-panel-center { padding-block:14px; }
+  .auth-panel-center { padding-block:13px; }
   .auth-panel-art { max-width:280px; }
 }
 
@@ -544,4 +572,4 @@ css += r"""
 """
 app_path.write_text(app, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
-print("Replaced the accumulated auth layout with separate desktop and mobile compositions.")
+print("Replaced all previous auth CSS layers and normalized the desktop/mobile auth markup.")

@@ -197,70 +197,29 @@ if APP.is_file():
           "The dedicated desktop authentication composition is missing.")
     check("setAuthMode(authMode === 'login' ? 'register' : 'login')" in app,
           "The redesigned auth form must retain its existing sign-in / sign-up switch.")
-    auth_refresh_css = full_redesign_css[full_redesign_css.find("FJ AUTH EXPERIENCE v2"):]
-    check(bool(auth_refresh_css), "The final authentication redesign CSS is missing.")
+    auth_responsive_css = full_redesign_css[full_redesign_css.find("FJ AUTH RESPONSIVE REDESIGN v4"):]
+    check(bool(auth_responsive_css), "The clean responsive authentication redesign is missing.")
     for auth_contract in (
-        ".auth-shell > .auth-form-wrap",
-        ".auth-shell .mobile-brand",
-        "@media (max-width:700px)",
-        "font-size:16px !important",
-    ):
-        check(auth_contract in auth_refresh_css, f"Authentication mobile layout contract is missing: {auth_contract}.")
-    auth_desktop_css = full_redesign_css[full_redesign_css.find("FJ AUTH DESKTOP EXPERIENCE v2"): ]
-    check(bool(auth_desktop_css), "The desktop authentication layout CSS is missing.")
-    for desktop_auth_contract in (
-        ".auth-shell > .auth-form-wrap",
-        "width:min(100%,520px) !important",
-        "border-top:3px solid var(--fj-violet,var(--accent))",
-        "@media (min-width:701px)",
-    ):
-        check(desktop_auth_contract in auth_desktop_css,
-              f"Desktop authentication layout contract is missing: {desktop_auth_contract}.")
-
-    auth_width_css = full_redesign_css[full_redesign_css.find("FJ AUTH WIDTH EXPERIENCE v1"):]
-    check(bool(auth_width_css), "The wider authentication layout overrides are missing.")
-    for auth_width_contract in (
-        "width:min(100%,600px) !important",
-        "max-width:620px !important",
-        "@media (max-width:700px)",
-        "@media (max-width:380px)",
-    ):
-        check(auth_width_contract in auth_width_css,
-              f"Authentication width contract is missing: {auth_width_contract}.")
-
-    auth_full_width_css = full_redesign_css[full_redesign_css.find("FJ AUTH FULL-WIDTH EXPERIENCE v1"):]
-    check(bool(auth_full_width_css), "The edge-to-edge authentication layout is missing.")
-    for full_width_contract in (
-        "padding-inline:clamp(22px,2.1vw,42px) !important",
-        "width:100% !important",
-        "max-width:none !important",
-        "@media (min-width:1101px)",
-        "@media (min-width:701px) and (max-width:1100px)",
-        "@media (max-width:700px)",
-    ):
-        check(full_width_contract in auth_full_width_css,
-              f"Full-width authentication contract is missing: {full_width_contract}.")
-
-    auth_responsive_css = full_redesign_css[full_redesign_css.find("FJ AUTH RESPONSIVE REDESIGN v3"):]
-    check(bool(auth_responsive_css), "The separate desktop and mobile authentication redesign is missing.")
-    for responsive_auth_contract in (
-        "grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr)",
+        "grid-template-columns:minmax(0,.96fr) minmax(0,1.04fr)",
+        "@media (min-width:980px)",
         ".auth-shell > .auth-desktop-panel",
-        "@media (min-width:981px)",
+        "@media (min-width:701px) and (max-width:979px)",
         "@media (max-width:700px)",
         ".auth-shell::before",
         "max-width:570px !important",
         "env(safe-area-inset-bottom,0px)",
         "@media (max-height:620px)",
     ):
-        check(responsive_auth_contract in auth_responsive_css,
-              f"Responsive authentication contract is missing: {responsive_auth_contract}.")
+        check(auth_contract in auth_responsive_css,
+              f"Authentication responsive design contract is missing: {auth_contract}.")
+    check(auth_responsive_css.count("FJ AUTH RESPONSIVE REDESIGN v4") == 1,
+          "Authentication must have one clean final responsive stylesheet.")
     for panel_contract in (
         'className="auth-panel-brand"',
         'className="auth-panel-art"',
         'className="auth-panel-title"',
     ):
-        check(panel_contract in app, f"Desktop authentication panel is missing {panel_contract}.")
+        check(panel_contract in app, f"Desktop auth brand panel is missing {panel_contract}.")
 
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
           "Contest designer is missing quick topic presets.")
