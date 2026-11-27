@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 """Replace the split authentication marketing panel with a focused, responsive auth card."""
 from pathlib import Path
 
