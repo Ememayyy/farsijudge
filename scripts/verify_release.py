@@ -225,6 +225,32 @@ if APP.is_file():
         check(obsolete_auth_marker not in full_redesign_css,
               f"An obsolete layered authentication stylesheet remains: {obsolete_auth_marker}.")
 
+    check("farsijudge-saved-contests" in app and "localStorage.setItem('farsijudge-saved-contests'" in app,
+          "Saved contests must persist in browser storage.")
+    for saved_contract in (
+        "function downloadContestCalendar(exam: Exam): boolean",
+        "filter === 'saved'",
+        "onToggleSaved",
+        "onAddToCalendar",
+        "aria-pressed={savedSet.has(exam.id)}",
+        "aria-pressed={saved.has(exam.id)}",
+        "TRIGGER:-PT15M",
+        "text/calendar;charset=utf-8",
+    ):
+        check(saved_contract in app, f"Personal contest tools are missing: {saved_contract}.")
+    personal_tools_start = full_redesign_css.find("FJ PERSONAL CONTEST TOOLS v1")
+    personal_tools_css = full_redesign_css[personal_tools_start:] if personal_tools_start >= 0 else ""
+    check(personal_tools_start >= 0, "Personal contest tools styling is missing.")
+    for personal_contract in (
+        ".oj-contest-utility-actions",
+        ".oj-save-action.is-saved",
+        ".oj-calendar-action",
+        "grid-template-columns:repeat(5,minmax(0,1fr))",
+        "@media (max-width:700px)",
+    ):
+        check(personal_contract in personal_tools_css,
+              f"Personal contest tools styling contract is missing: {personal_contract}.")
+
     check("contest-tag-preset-list" in app and "انتخاب سریع موضوع" in app,
           "Contest designer is missing quick topic presets.")
     for tag in ("combinatorics", "algorithm", "programming", "graph", "algebra", "geometry"):
