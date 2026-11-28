@@ -94,6 +94,16 @@ jobs:
           # Final guard: several source patches append to index.html, so fix the favicon last.
           sed -i 's|/farsijudge/farsijudge-logo.webp|./fj-logo.svg|g' farsijudge/index.html
 
+      - name: Temporary source snapshot for product review
+        uses: actions/upload-artifact@v4
+        with:
+          name: fj-source-review
+          path: |
+            farsijudge/src/App.tsx
+            farsijudge/src/style.css
+            farsijudge/package.json
+          retention-days: 1
+
       - name: Install dependencies
         working-directory: ./farsijudge
         run: npm install --no-audit --no-fund
